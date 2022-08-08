@@ -7,6 +7,8 @@ nltk.download('stopwords')
 stemmer2 = SnowballStemmer("english", ignore_stopwords=True)
 '''
 本py文件用于数据预处理，将txt转化为json数据结构便于处理
+json template:
+{"document": "commiss decis juli lai detail "id": 0, "summary": "['award of contract', 'aid to disadvantag group']"}
 '''
 
 pair = {}
@@ -35,6 +37,7 @@ def for_finetune(dataset_name):
                     pair["id"] = i
                     summary_list = label_data[i].rstrip().split(" ")
                     summary = []
+                    #词干化--过耦合（待修改）应该直接使用词干化并去_的labels文件
                     for each in summary_list:
                         split_one = each.split("_")
                         one_label = [stemmer2.stem(plural) for plural in split_one]
