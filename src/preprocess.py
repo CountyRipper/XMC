@@ -43,7 +43,6 @@ def for_finetune(dataset_name):
                         one_label = [stemmer2.stem(plural) for plural in split_one]
                         summary.append(" ".join(one_label))
                     pair["summary"] = str(summary)
-
                     #result = json.dumps(eval(str(pair)))
                     if i % 10000 == 0:
                         print(str(i) + " / " + str(len(text_data)))

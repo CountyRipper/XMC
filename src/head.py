@@ -1,7 +1,5 @@
 from transformers import PegasusForConditionalGeneration, PegasusTokenizer
 import json
-import torch
-import ast
 from tqdm import tqdm
 from sentence_transformers import CrossEncoder
 from transformers import PegasusForConditionalGeneration, PegasusTokenizer, Seq2SeqTrainer, Seq2SeqTrainingArguments
