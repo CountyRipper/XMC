@@ -52,8 +52,7 @@ def merge_each_label(data_name,outputname=None)-> List[str]:
             with open(outputname+".txt","a+") as s:
                 for i in result:
                     s.write(i+"\n")
-        return result
-                      
+        return result                      
     """
     template: beef market_support france award_of_contract aid_to_disadvantaged_groups
     """

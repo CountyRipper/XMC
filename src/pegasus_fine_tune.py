@@ -18,11 +18,11 @@ Reference:
 import time #计时器
 from transformers import PegasusForConditionalGeneration, PegasusTokenizer, Seq2SeqTrainer, Seq2SeqTrainingArguments
 import torch
-import nltk
+#import nltk
 import numpy as np
 
 
-prefix = "summarize: "
+
 
 class PegasusDataset(torch.utils.data.Dataset):
     def __init__(self, encodings, labels):
@@ -139,29 +139,30 @@ def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, 
 
   return trainer
 
-if __name__=='__main__':
-  #datadir = "./dataset/"
+# if __name__=='__main__':
+#   #datadir = "./dataset/"
   
-  # use XSum dataset as example, with first 1000 docs as training data
-  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-  print(device)
-  from datasets import load_dataset
-  # dataset = load_dataset("xsum")
-  dataset = load_dataset('json',data_files={'train': 'train_finetune.json', 'valid': 'test_finetune.json'}).shuffle(seed=42)
+#   # use XSum dataset as example, with first 1000 docs as training data
+#   prefix = "summarize: "
+#   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+#   print(device)
+#   from datasets import load_dataset
+#   # dataset = load_dataset("xsum")
+#   dataset = load_dataset('json',data_files={'train': 'train_finetune.json', 'valid': 'test_finetune.json'}).shuffle(seed=42)
 
-  train_texts, train_labels = [prefix + each for each in dataset['train']['document']], dataset['train']['summary']
-  valid_texts, valid_labels = [prefix + each for each in dataset['valid']['document']], dataset['valid']['summary']
+#   train_texts, train_labels = [prefix + each for each in dataset['train']['document']], dataset['train']['summary']
+#   valid_texts, valid_labels = [prefix + each for each in dataset['valid']['document']], dataset['valid']['summary']
   
-  # use Pegasus Large model as base for fine-tuning
-  model_name = 'google/pegasus-large'
-  #return train_dataset, val_dataset, test_dataset, tokenizer 可以一起投入
-  train_dataset, _, _, tokenizer = prepare_data(model_name, train_texts, train_labels)
-  valid_dataset, _, _, _ = prepare_data(model_name, valid_texts, valid_labels)
-  trainer = prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=valid_dataset)
-  #,val_dataset=valid_dataset
-  print("start training")
-  start_time = time.time()
-  trainer.train()
-  trainer.save_model(output_dir='pegasus_test_save')
-  end_time = time.time()
-  print('pegasus_time_cost: ',end_time-start_time,'s')
+#   # use Pegasus Large model as base for fine-tuning
+#   model_name = 'google/pegasus-large'
+#   #return train_dataset, val_dataset, test_dataset, tokenizer 可以一起投入
+#   train_dataset, _, _, tokenizer = prepare_data(model_name, train_texts, train_labels)
+#   valid_dataset, _, _, _ = prepare_data(model_name, valid_texts, valid_labels)
+#   trainer = prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=valid_dataset)
+#   #,val_dataset=valid_dataset
+#   print("start training")
+#   start_time = time.time()
+#   trainer.train()
+#   trainer.save_model(output_dir='pegasus_test_save')
+#   end_time = time.time()
+#   print('pegasus_time_cost: ',end_time-start_time,'s')

@@ -1,7 +1,7 @@
 from transformers import PegasusForConditionalGeneration, PegasusTokenizer
 import json
-import torch
-import ast
+# import torch
+# import ast
 from tqdm import tqdm
 
 
@@ -23,10 +23,11 @@ def pegasus_pred(src):
   # Generate Summary
     summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length = 64,num_beams = 7).to(device)  #length_penalty = 3.0  top_k = 5
     pegasus_pred = str([tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in summary_ids])#[2:-2]
-    return (pegasus_pred)
+    return pegasus_pred
 
 #Original!
-    """_summary_
+    """
+    _summary_
     get model predicting result
     input: output_dir, src_dataname(for predicting) is document sets. 
     """
