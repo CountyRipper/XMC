@@ -3,19 +3,9 @@ import json
 # import torch
 # import ast
 from tqdm import tqdm
-
-
 device = 'cuda'#'cpu
-# model save dir
-model = PegasusForConditionalGeneration.from_pretrained('./pegasus_test_save').to(device)#BART-large-Finetuned
-tokenizer = PegasusTokenizer.from_pretrained('./pegasus_test_save')
-
-tokenizer.save_pretrained("added")
-tokenizer.save_vocabulary("added")
-print(tokenizer.vocab_size)
-tokenizer.get_added_vocab()
-
-def pegasus_pred(src):
+def pegasus_pred(model,tokenizer,model_path,src):
+    
     ARTICLE_TO_SUMMARIZE = src
     inputs = tokenizer([ARTICLE_TO_SUMMARIZE], return_tensors='pt', padding=True, truncation=True).to(device)#, padding=True
 
@@ -31,20 +21,35 @@ def pegasus_pred(src):
     get model predicting result
     input: output_dir, src_dataname(for predicting) is document sets. 
     """
-def get_pred_Pegasus(output_dir,src_dataname):
+def get_pred_Pegasus(dir,output_dir,src_dataname,model_path):
+    '''
+    加载配置
+    '''
+   
+    # model save dir
+    #dir = './dataset/EUR-Lex/ dataset dir
+    model = PegasusForConditionalGeneration.from_pretrained(dir+model_path).to(device)#BART-large-Finetuned
+    tokenizer = PegasusTokenizer.from_pretrained(dir+model_path)
+
+    tokenizer.save_pretrained(dir+"pegasus_tokenizer")
+    tokenizer.save_vocabulary(dir+"pegasus_tokenizer")
+    print(tokenizer.vocab_size)
+    tokenizer.get_added_vocab()
+    
     data = []
     dic = [] # dictionary for save each model generate result
     src_value = [] # using for get source document which is used to feed into model, and get predicting result
     pre_result = [] #get model predicting result. (each points data)
+    res = []
     # open test file 
-    with open("./dataset/"+src_dataname, 'r+') as f:
+    with open("./dataset/EUR-Lex/"+src_dataname, 'r+') as f:
         for line in f:
             data.append(json.loads(line))
         # 进度条可视化 vision process
         for i in tqdm(range(len(data))): #range(len(data))
             dic = data[i]
             src_value = dic["document"]
-            tmp_result = pegasus_pred(src_value)
+            tmp_result = pegasus_pred(model,tokenizer,model_path,src_value)
             #print(tmp_result)
             #tmp_result=tmp_result.strip('[').strip(']').strip('"').strip('[').strip(']')
             #tmp_result=tmp_result.split(',')
@@ -60,11 +65,19 @@ def get_pred_Pegasus(output_dir,src_dataname):
                 pre_result[i] = tmpstr[1]
             #pre_result = list(map(lambda x : str(x).strip("\'").strip("\'"), pre_result))#python3 map() return an iteration
             # write result set into output file
-            with open("./"+output_dir+"/"+"test_pegasus_pred.txt",'a+') as t:
-                #json.dump(dic,t)
-                for i in pre_result:
-                    t.write(i+", ")
-                t.write('\n')
+            #把这个步骤外移，
+            sign= ", "
+            res.append(sign.join(pre_result))
+            if i%10000==0:
+                print(res[i])
+            # with open(dir+output_dir+"test_pegasus_pred.txt",'a+') as t:
+            #     #json.dump(dic,t)
+            #     for i in pre_result:
+            #         t.write(i+", ")
+            #     t.write('\n')
+        with open(dir+output_dir+"test_pegasus_pred.txt",'w+') as w:
+            for i in res:
+                w.write(res+"\n")
         #f.close()
         #t.close()
-get_pred_Pegasus("generate_result","test_finetune.json")
+#get_pred_Pegasus("generate_result","test_finetune.json","pegasus_test_save")

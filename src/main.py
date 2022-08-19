@@ -1,12 +1,12 @@
 from premethod import *
 from pegasus_fine_tune import *
 #from head import*
+from generate_pegasus import *
 
-
-def datapreprocess():
+def datapreprocess(dir):
     type = ['_labels', '_texts']
     tasks = ['test', 'train']
-    dir = './dataset/EUR-Lex/'
+    #dir = './dataset/EUR-Lex/'
     for i in range(len(tasks)):
         label_path = dir+tasks[i]+type[0]
         stem_labels(label_path, label_path+"_stem")
@@ -18,8 +18,8 @@ def datapreprocess():
     # txt_to_json('./dataset/EUR-Lex/test_texts',"./dataset/EUR-Lex/test_labels_stem","./dataset/EUR-Lex/test_finetune")
 
 
-def fine_tune():
-    dir = './dataset/EUR-Lex/'
+def fine_tune(dir):
+    #dir = './dataset/EUR-Lex/'
     # use XSum dataset as example, with first 1000 docs as training data
     prefix = "summarize: "
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -46,5 +46,6 @@ def fine_tune():
 
 if __name__ == '__main__':
     # 注意文件路径
-    datapreprocess()
-    fine_tune()
+    #datapreprocess('./dataset/EUR-Lex/')
+    #fine_tune('./dataset/EUR-Lex/')
+    get_pred_Pegasus('./dataset/EUR-Lex/',"generate_result/","test_finetune.json","pegasus_test_save")
