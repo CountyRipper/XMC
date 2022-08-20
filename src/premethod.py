@@ -12,8 +12,17 @@ input: franc, beef, intervent stock, aid to disadvantag group,
 output: franc \n beef \n intervent stock \n
 '''
 def get_all_labels(data_name,outputname=None)-> List[str]:
-    
-    pass
+    #约定dataname第一个是train，第二个是test，第三个valid
+    label_set=[]
+    for i in data_name:
+        with open(i,'r+') as file:
+            for row in file:
+                label_set.append(row.rstrip())
+    with open(outputname, 'w+') as res:
+        for row in label_set:
+            for j in row.split(', '):
+                res.write(j+"\n")
+    #return label_set
 #replace sapce of each labels  to _
 #inpput template: franc, beef, intervent stock, aid to disadvantag group, communiti aid,
 #output template: franc, beef, intervent_stock, aid_to_disadvantag_group,  
@@ -50,12 +59,11 @@ def stem_labels(data_name,outputname=None)->List[str]:
                 for each_word in each_label.split("_"): #词组形式用“_”切分
                     word_list.append(stemmer2.stem(each_word))
                 stem_label_result.append(" ".join(word_list)) #将每一个词干化好的标签添加到结果数组
-            stem_result.append(stem_label_result)   
+            stem_result.append(", ".join(stem_label_result))   
         if outputname: #如果需要输出文件
             with open(outputname+".txt","w", encoding='utf8') as f:
                 for i in stem_result:
                     f.write(str(i)+"\n")
-                    
         return stem_labels
                 
 
@@ -77,20 +85,38 @@ def txt_to_json(text_name,label_name,outputname=None):
                 for row in t:
                     all_text_data.append(row)
                 for row in l:
-                    all_label_data.append(row)
+                    all_label_data.append(row.rstrip().split(", "))
                 for i in tqdm(range(len(all_text_data))):
                     pair['document'] = all_text_data[i].rstrip()
                     pair['id'] = i
                     #请注意接下来无词干化过程，需要确保词干化的label文件
                     #print(all_label_data[i])
-                    pair['summary'] = str(all_label_data[i].rstrip())
+                    pair['summary'] = str(all_label_data[i])
                     if i %10000 == 0:
                         print(str(i)+": "+ str(len(all_text_data)))
                         print(str(all_label_data[i]))
                     json.dump(pair,w)
                     w.write("\n")
         
-                    
-            
+'''
+get all label_stem
+获取全部词干化的单词
+'''
+def get_all_stemlabels(datadir,outputdir=None)-> List[str]:
+    #理论上应该是test+train+valid所有的stem_labels文件合并在一起
+    print('get_all_stemlabels:begin()')
+    res = set()
+    with open(datadir,'r+') as file:
+        for i in tqdm(file):
+            # row 是标签
+            res.add(i)
+    if outputdir:
+        with open(outputdir,'w+') as w:
+            for i in res:
+                w.write(str(i))
+    print('get_all_stemlabels:end()')
+    print('all_label_stem outputdir: '+ outputdir )
+    return res
+        
         
     

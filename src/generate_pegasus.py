@@ -24,6 +24,9 @@ def pegasus_pred(model,tokenizer,model_path,src):
 def get_pred_Pegasus(dir,output_dir,src_dataname,model_path):
     '''
     加载配置
+    dir是当前数据库文件夹位置
+    outputdir是输出预测文件位置： dir+generate_result
+    srcdata是用于预测的原始文件doc的位置 dir+
     '''
    
     # model save dir
@@ -42,7 +45,7 @@ def get_pred_Pegasus(dir,output_dir,src_dataname,model_path):
     pre_result = [] #get model predicting result. (each points data)
     res = []
     # open test file 
-    with open("./dataset/EUR-Lex/"+src_dataname, 'r+') as f:
+    with open(src_dataname, 'r+') as f:
         for line in f:
             data.append(json.loads(line))
         # 进度条可视化 vision process
@@ -68,16 +71,16 @@ def get_pred_Pegasus(dir,output_dir,src_dataname,model_path):
             #把这个步骤外移，
             sign= ", "
             res.append(sign.join(pre_result))
-            if i%10000==0:
+            if i%1000==0:
                 print(res[i])
-            # with open(dir+output_dir+"test_pegasus_pred.txt",'a+') as t:
-            #     #json.dump(dic,t)
-            #     for i in pre_result:
-            #         t.write(i+", ")
-            #     t.write('\n')
-        with open(dir+output_dir+"test_pegasus_pred.txt",'w+') as w:
-            for i in res:
-                w.write(res+"\n")
+            with open(output_dir+"test_pegasus_pred.txt",'a+') as t:
+                #json.dump(dic,t)
+                for i in pre_result:
+                    t.write(i+", ")
+                t.write('\n')
+        # with open(dir+output_dir+"test_pegasus_pred.txt",'w+') as w:
+        #     for row in res:
+        #         w.write(row+"\n")
         #f.close()
         #t.close()
 #get_pred_Pegasus("generate_result","test_finetune.json","pegasus_test_save")

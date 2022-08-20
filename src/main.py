@@ -1,3 +1,4 @@
+from asyncio import tasks
 from premethod import *
 from pegasus_fine_tune import *
 #from head import*
@@ -7,15 +8,20 @@ def datapreprocess(dir):
     type = ['_labels', '_texts']
     tasks = ['test', 'train']
     #dir = './dataset/EUR-Lex/'
+    #词干化以及转化为json
+    dataset_path=[]
     for i in range(len(tasks)):
         label_path = dir+tasks[i]+type[0]
+        dataset_path.append(label_path+'_stem.txt')
         stem_labels(label_path, label_path+"_stem")
         text_path = dir+tasks[i]+type[1]
         finetune_path = dir+tasks[i]+"_finetune"
         txt_to_json(text_path, label_path+"_stem",
                     finetune_path)  # 注意标签是已经stem过的
-    # stem_labels("./dataset/EUR-Lex/test_labels","./dataset/EUR-Lex/test_labels_stem")
-    # txt_to_json('./dataset/EUR-Lex/test_texts',"./dataset/EUR-Lex/test_labels_stem","./dataset/EUR-Lex/test_finetune")
+    get_all_labels(dataset_path,dir+"all_labels.txt")
+    get_all_stemlabels(dir+'all_labels.txt',dir+'all_stemlabels.txt')
+    #stem_labels("./dataset/EUR-Lex/test_labels","./dataset/EUR-Lex/test_labels_stem")
+    #txt_to_json('./dataset/EUR-Lex/test_texts',"./dataset/EUR-Lex/test_labels_stem","./dataset/EUR-Lex/test_finetune")
 
 
 def fine_tune(dir):
@@ -46,6 +52,8 @@ def fine_tune(dir):
 
 if __name__ == '__main__':
     # 注意文件路径
-    #datapreprocess('./dataset/EUR-Lex/')
-    #fine_tune('./dataset/EUR-Lex/')
-    get_pred_Pegasus('./dataset/EUR-Lex/',"generate_result/","test_finetune.json","pegasus_test_save")
+    datadir = ['./dataset/EUR-Lex/','./dataset/Wiki500K/']
+    tasks = ['test','train','valid']
+    datapreprocess(datadir[0])
+    #fine_tune(datadir[0])
+    #get_pred_Pegasus(datadir[0],datadir[0]+"generate_result/",datadir[0]+tasks[0]+"_finetune.json","pegasus_"+tasks[0]+"_save")
