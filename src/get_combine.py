@@ -8,6 +8,9 @@ similar-在全标签域中无法匹配到，找出最相似的一组标签(这�
 combine=same+similar
 preformat = 原生预测标签结果的词干化，上述的前三个也是词干化去重之后的结果
 需要跑两次得到test和train的两组数据，train的用于ranking训练，test的用于结果测试
+原则上getcombime完成一个工作，先得到词干化好的当前预测label列表，得到词干化好的标准参照列表
+然后两者text顺序匹配如果在标准列表中就获得samelist，剩下的label进入similarlist
+similar list是在标准标签中找不到的
 '''
 scores = model.predict([('Sent A1', 'Sent B1'), ('Sent A2', 'Sent B2')])
 print(type(scores))
@@ -90,7 +93,7 @@ def get_similar_txt(dataset_name,reference_labe_name):
     not_same_label_list = []
     similar_label_list = []
     combine_label_list = []
-    pred_format_list = []
+    pred_format_list = []#预测结果
     # 所有出现过的label 包含train和test  from test_labels.txt and train_labels.txt
     '''
         all_labels_stem.txt = reference_labe_name
@@ -99,10 +102,12 @@ def get_similar_txt(dataset_name,reference_labe_name):
         for line in label_f:
             label_stem_list.append(line.strip())   
 
-    with open(dataset_name + "_pred.txt", "r+") as pred_txt:
+    with open(dataset_name + "_pred.txt", "r+") as pred_txt:#
+        #pred_txt是读取到的每个point预测的单词组
         pred_list = []
         #test_pegasus.tgt  是test_labels.txt
         with open("test_labels.txt", "r+") as tgt_txt:
+            #tgt_txt是对应黄金标签
             tgt_list = []
             #数据预处理部分，如果之前已经处理则不需要，原则上实现的效果应该是切分到每个预测的词
             for line in pred_txt:
@@ -121,6 +126,7 @@ def get_similar_txt(dataset_name,reference_labe_name):
                         word_list.append(stemmer2.stem(per_word))
                     curr_tgt.append(" ".join(word_list))
                 tgt_list.append(curr_tgt)
+        #截止目前程序的作用是得到pred_list    
 
             for i in tqdm(range(len(pred_list))):
                 same_list = []
@@ -156,7 +162,7 @@ def get_similar_txt(dataset_name,reference_labe_name):
                         most_similar_one = label_stem_list[scores.index(max(scores))] 
                         similar_list.append(most_similar_one)
                     #combine = 相等+相似
-                    combine_list.extend(same_list)
+                    combine_list.extend(same_list)                    
                     combine_list.extend(similar_list)  
                     similar_label_list.append(similar_list)   
                 combine_list_redundant = list(set(combine_list))

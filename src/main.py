@@ -3,7 +3,7 @@ from premethod import *
 from pegasus_fine_tune import *
 #from head import*
 from generate_pegasus import *
-
+from combine import *
 def datapreprocess(dir):
     type = ['_labels', '_texts']
     tasks = ['test', 'train']
@@ -54,6 +54,8 @@ if __name__ == '__main__':
     # 注意文件路径
     datadir = ['./dataset/EUR-Lex/','./dataset/Wiki500K/']
     tasks = ['test','train','valid']
-    datapreprocess(datadir[0])
+    #datapreprocess(datadir[0])
     #fine_tune(datadir[0])
     #get_pred_Pegasus(datadir[0],datadir[0]+"generate_result/",datadir[0]+tasks[0]+"_finetune.json","pegasus_"+tasks[0]+"_save")
+    get_combine_list(datadir[0],tasks[0]+"_pegasus_pred.txt","all_stemlabels.txt",tasks[0]+"_combine_label.txt")
+    
