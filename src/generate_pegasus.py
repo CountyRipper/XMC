@@ -31,8 +31,8 @@ def get_pred_Pegasus(dir,output_dir,src_dataname,model_path):
    
     # model save dir
     #dir = './dataset/EUR-Lex/ dataset dir
-    model = PegasusForConditionalGeneration.from_pretrained(dir+model_path).to(device)#BART-large-Finetuned
-    tokenizer = PegasusTokenizer.from_pretrained(dir+model_path)
+    model = PegasusForConditionalGeneration.from_pretrained(dir+'pegasus_save').to(device)#BART-large-Finetuned
+    tokenizer = PegasusTokenizer.from_pretrained(dir+'pegasus_save')
 
     tokenizer.save_pretrained(dir+"pegasus_tokenizer")
     tokenizer.save_vocabulary(dir+"pegasus_tokenizer")
@@ -44,6 +44,7 @@ def get_pred_Pegasus(dir,output_dir,src_dataname,model_path):
     src_value = [] # using for get source document which is used to feed into model, and get predicting result
     pre_result = [] #get model predicting result. (each points data)
     res = []
+    outrangenum=0
     # open test file 
     with open(src_dataname, 'r+') as f:
         for line in f:
@@ -62,22 +63,26 @@ def get_pred_Pegasus(dir,output_dir,src_dataname,model_path):
             #del dic['document']
             #del dic['summary']
             #print(dic)
-            pre_result=dic["pred"].strip("[]").strip('\"').strip("'").strip("[]").strip(" ").split(",")
-            for i in range(len(pre_result)):
-                tmpstr = pre_result[i].split("'")
-                pre_result[i] = tmpstr[1]
+            #print(dic["pred"])
+            res_labels=[]
+            pre_result=dic["pred"].strip("'").strip("[]").strip('\"').strip("[]").strip("\\").strip("'").split(",")
+            for j in range(len(pre_result)):
+                tmpstr = pre_result[j].strip(" ").strip("'")
+                if tmpstr=='':
+                    continue
+                res_labels.append(tmpstr)
             #pre_result = list(map(lambda x : str(x).strip("\'").strip("\'"), pre_result))#python3 map() return an iteration
             # write result set into output file
             #把这个步骤外移，
             sign= ", "
-            res.append(sign.join(pre_result))
+            res.append(sign.join(res_labels))
             if i%1000==0:
                 print(res[i])
-            with open(output_dir+"test_pegasus_pred.txt",'a+') as t:
+            with open(output_dir,'a+') as t:
                 #json.dump(dic,t)
-                for i in pre_result:
-                    t.write(i+", ")
+                t.write(res[i])
                 t.write('\n')
+    #print('pred ending, out range pred nums:'+str(outrangenum))
         # with open(dir+output_dir+"test_pegasus_pred.txt",'w+') as w:
         #     for row in res:
         #         w.write(row+"\n")

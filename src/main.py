@@ -1,9 +1,10 @@
-from asyncio import tasks
+
 from premethod import *
 from pegasus_fine_tune import *
 #from head import*
 from generate_pegasus import *
 from combine import *
+from rank_training import rank_train
 def datapreprocess(dir):
     type = ['_labels', '_texts']
     tasks = ['test', 'train']
@@ -24,7 +25,7 @@ def datapreprocess(dir):
     #txt_to_json('./dataset/EUR-Lex/test_texts',"./dataset/EUR-Lex/test_labels_stem","./dataset/EUR-Lex/test_finetune")
 
 
-def fine_tune(dir):
+def fine_tune(dir,task):
     #dir = './dataset/EUR-Lex/'
     # use XSum dataset as example, with first 1000 docs as training data
     prefix = "summarize: "
@@ -45,7 +46,7 @@ def fine_tune(dir):
     print("start training")
     start_time = time.time()
     trainer.train()
-    trainer.save_model(output_dir=dir+'pegasus_test_save')
+    trainer.save_model(output_dir=dir+'pegasus_save')
     end_time = time.time()
     print('pegasus_time_cost: ',end_time-start_time,'s')
 
@@ -56,6 +57,6 @@ if __name__ == '__main__':
     tasks = ['test','train','valid']
     #datapreprocess(datadir[0])
     #fine_tune(datadir[0])
-    #get_pred_Pegasus(datadir[0],datadir[0]+"generate_result/",datadir[0]+tasks[0]+"_finetune.json","pegasus_"+tasks[0]+"_save")
-    get_combine_list(datadir[0],tasks[0]+"_pegasus_pred.txt","all_stemlabels.txt",tasks[0]+"_combine_label.txt")
-    
+    #get_pred_Pegasus(datadir[0],datadir[0]+"generate_result/"+tasks[1]+"_pred.txt",datadir[0]+tasks[1]+"_finetune.json","pegasus_save")
+    #get_combine_list(datadir[0],"generate_result/"+tasks[1]+"_pred.txt","all_stemlabels.txt",tasks[1]+"_combine_label.txt")
+    rank_train(datadir[0],"train_texts.txt","generate_result/train_pred.txt","train_combine_label.txt","cr_en")
