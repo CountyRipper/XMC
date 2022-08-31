@@ -8,13 +8,10 @@ def pegasus_pred(model,tokenizer,model_path,src):
     
     ARTICLE_TO_SUMMARIZE = src
     inputs = tokenizer([ARTICLE_TO_SUMMARIZE], return_tensors='pt', padding=True, truncation=True).to(device)#, padding=True
-
-
   # Generate Summary
     summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length = 64,num_beams = 7).to(device)  #length_penalty = 3.0  top_k = 5
     pegasus_pred = str([tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in summary_ids])#[2:-2]
     return pegasus_pred
-
 #Original!
     """
     _summary_
@@ -28,11 +25,12 @@ def get_pred_Pegasus(dir,output_dir,src_dataname,model_path):
     outputdir是输出预测文件位置： dir+generate_result
     srcdata是用于预测的原始文件doc的位置 dir+
     '''
-   
+    model_path = dir+model_path
+    print("model_path: "+model_path)
     # model save dir
     #dir = './dataset/EUR-Lex/ dataset dir
-    model = PegasusForConditionalGeneration.from_pretrained(dir+'pegasus_save').to(device)#BART-large-Finetuned
-    tokenizer = PegasusTokenizer.from_pretrained(dir+'pegasus_save')
+    model = PegasusForConditionalGeneration.from_pretrained(model_path).to(device)#BART-large-Finetuned
+    tokenizer = PegasusTokenizer.from_pretrained(model_path)
 
     tokenizer.save_pretrained(dir+"pegasus_tokenizer")
     tokenizer.save_vocabulary(dir+"pegasus_tokenizer")
@@ -44,7 +42,6 @@ def get_pred_Pegasus(dir,output_dir,src_dataname,model_path):
     src_value = [] # using for get source document which is used to feed into model, and get predicting result
     pre_result = [] #get model predicting result. (each points data)
     res = []
-    outrangenum=0
     # open test file 
     with open(src_dataname, 'r+') as f:
         for line in f:

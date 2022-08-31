@@ -1,10 +1,12 @@
-
 from premethod import *
 from pegasus_fine_tune import *
 #from head import*
 from generate_pegasus import *
 from combine import *
 from rank_training import rank_train
+from rank import rank
+from p_at_1 import p_at_k
+from keybart_finetune import *
 def datapreprocess(dir):
     type = ['_labels', '_texts']
     tasks = ['test', 'train']
@@ -25,30 +27,6 @@ def datapreprocess(dir):
     #txt_to_json('./dataset/EUR-Lex/test_texts',"./dataset/EUR-Lex/test_labels_stem","./dataset/EUR-Lex/test_finetune")
 
 
-def fine_tune(dir,task):
-    #dir = './dataset/EUR-Lex/'
-    # use XSum dataset as example, with first 1000 docs as training data
-    prefix = "summarize: "
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(device)
-    from datasets import load_dataset
-    # dataset = load_dataset("xsum")
-    dataset = load_dataset('json',data_files={'train': dir+'train_finetune.json', 'valid': dir+'test_finetune.json'}).shuffle(seed=42)
-    train_texts, train_labels = [prefix + each for each in dataset['train']['document']], dataset['train']['summary']
-    valid_texts, valid_labels = [prefix + each for each in dataset['valid']['document']], dataset['valid']['summary']
-    # use Pegasus Large model as base for fine-tuning
-    model_name = 'google/pegasus-large'
-    #return train_dataset, val_dataset, test_dataset, tokenizer 可以一起投入
-    train_dataset, _, _, tokenizer = prepare_data(model_name, train_texts, train_labels)
-    valid_dataset, _, _, _ = prepare_data(model_name, valid_texts, valid_labels)
-    trainer = prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=valid_dataset)
-    #,val_dataset=valid_dataset
-    print("start training")
-    start_time = time.time()
-    trainer.train()
-    trainer.save_model(output_dir=dir+'pegasus_save')
-    end_time = time.time()
-    print('pegasus_time_cost: ',end_time-start_time,'s')
 
 
 if __name__ == '__main__':
@@ -56,7 +34,12 @@ if __name__ == '__main__':
     datadir = ['./dataset/EUR-Lex/','./dataset/Wiki500K/']
     tasks = ['test','train','valid']
     #datapreprocess(datadir[0])
-    #fine_tune(datadir[0])
-    #get_pred_Pegasus(datadir[0],datadir[0]+"generate_result/"+tasks[1]+"_pred.txt",datadir[0]+tasks[1]+"_finetune.json","pegasus_save")
-    #get_combine_list(datadir[0],"generate_result/"+tasks[1]+"_pred.txt","all_stemlabels.txt",tasks[1]+"_combine_label.txt")
-    rank_train(datadir[0],"train_texts.txt","generate_result/train_pred.txt","train_combine_label.txt","cr_en")
+    #Pegasus_fine_tune(datadir[0])
+    fine_tune_keybart(datadir[0],tasks[1]+'_finetune.json',tasks[0]+'_finetune.json','keybart_save')
+    #get_pred_Pegasus(datadir[0],datadir[0]+"generate_result/"+tasks[0]+"_pred.txt",datadir[0]+tasks[0]+"_finetune.json","pegasus_save")
+    #get_combine_list(datadir[0],"generate_result/"+tasks[0]+"_pred.txt","all_stemlabels.txt",tasks[0]+"_combine_labels.txt")
+    #get_combine_list(datadir[0],"generate_result/"+tasks[1]+"_pred.txt","all_stemlabels.txt",tasks[1]+"_combine_labels.txt")
+    #rank_train(datadir[0],tasks[1]+"_texts.txt",tasks[1]+"_combine_labels.txt",tasks[1]+"_labels_stem.txt","cr_en")
+    #rank(datadir[0],tasks[0]+"_texts.txt",tasks[0]+"_combine_labels.txt","cr_en",tasks[0]+"_ranked_labels.txt")
+    #res = p_at_k(datadir[0],tasks[0]+"_labels_stem.txt",tasks[0]+"_ranked_labels.txt")
+    

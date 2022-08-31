@@ -11,7 +11,7 @@ def get_combine_list(data_dir,pred_data,reference_data,outputdir=None)-> List[Li
     pred_list=[]
     all_label_list=[]
     combine_list=[]
-    no_in_count=[]
+    #no_in_count=[]
     #全是已经词干化的label集合
     #对应test_pregasus_pred.txt, all_stemlabels.txt
     with open(data_dir+pred_data,'r+') as f1:
@@ -30,7 +30,7 @@ def get_combine_list(data_dir,pred_data,reference_data,outputdir=None)-> List[Li
             else:
                 no_equal_list.append(each_label)
         #对于每一个不在已存在标签列表中的label，计算得到最相似的标签
-        no_in_count.append(len(no_equal_list[i]))
+        #no_in_count.append(len(no_equal_list[i]))
         if i%1000==0:
             print("equal:"+str(equal_list))
             print('no_equal:'+str(no_equal_list))
@@ -46,15 +46,18 @@ def get_combine_list(data_dir,pred_data,reference_data,outputdir=None)-> List[Li
         equal_list.extend(similar_list)
         #print("no:",no_equal_list)
         #print("similar:",similar_list)
-        combine_list.append(equal_list)
+        single_list = list(set(equal_list))
+        single_list.sort(key=equal_list.index)
+        combine_list.append(single_list)
     if outputdir:
         print('write into: '+data_dir+outputdir)
         with open(data_dir+outputdir,'w+')as w1:
             for row in combine_list:
                 w1.write(", ".join(row)+'\n')
-    with open(data_dir+outputdir.strip('.txt')+"nn_count.txt",'w+') as w1:
-        for i in no_in_count:
-            w1.write(str(i)+'\n')
+    # #记录替换次数
+    # with open(data_dir+outputdir.rstrip('.txt')+"no_count.txt",'w+') as w1:
+    #     for i in no_in_count:
+    #         w1.write(str(i)+'\n')
     return combine_list
                         
         

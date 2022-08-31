@@ -22,14 +22,12 @@ import torch
 import numpy as np
 
 
-
-
 class PegasusDataset(torch.utils.data.Dataset):
-    def __init__(self, encodings, labels):
-        self.encodings = encodings
+    def __init__(self, encoding, labels):
+        self.encoding = encoding
         self.labels = labels
     def __getitem__(self, idx):
-        item = {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
+        item = {key: torch.tensor(val[idx]) for key, val in self.encoding.items()}
         item['labels'] = torch.tensor(self.labels['input_ids'][idx])  # torch.tensor(self.labels[idx])
         return item
     def __len__(self):
@@ -44,7 +42,7 @@ def prepare_data(model_name,
   Prepare input data for model fine-tuning
   """
   tokenizer = PegasusTokenizer.from_pretrained(model_name)
-
+  
   prepare_val = False if val_texts is None or val_labels is None else True
   prepare_test = False if test_texts is None or test_labels is None else True
 
@@ -59,28 +57,7 @@ def prepare_data(model_name,
   test_dataset = tokenize_data(test_texts, test_labels) if prepare_test else None
 
   return train_dataset, val_dataset, test_dataset, tokenizer
-'''
-def compute_metrics(eval_pred):
-  predictions, labels = eval_pred
-  decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
-  # Replace -100 in the labels as we can't decode them.
-  labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
-  decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
-    
-  # Rouge expects a newline after each sentence
-  decoded_preds = ["\n".join(nltk.sent_tokenize(pred.strip())) for pred in decoded_preds]
-  decoded_labels = ["\n".join(nltk.sent_tokenize(label.strip())) for label in decoded_labels]
-    
-  result = metric.compute(predictions=decoded_preds, references=decoded_labels, use_stemmer=True)
-  # Extract a few results
-  result = {key: value.mid.fmeasure * 100 for key, value in result.items()}
-    
-  # Add mean generated length
-  prediction_lens = [np.count_nonzero(pred != tokenizer.pad_token_id) for pred in predictions]
-  result["gen_len"] = np.mean(prediction_lens)
-    
-  return {k: round(v, 4) for k, v in result.items()}
-'''
+
 def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, freeze_encoder=False, output_dir='./pegasus-test'):
   """
   Prepare configurations and base model for fine-tuning
@@ -138,6 +115,55 @@ def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, 
     )
 
   return trainer
+
+def Pegasus_fine_tune(dir):
+    #dir = './dataset/EUR-Lex/'
+    prefix = "summarize: "
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(device)
+    from datasets import load_dataset
+    # dataset = load_dataset("xsum")
+    dataset = load_dataset('json',data_files={'train': dir+'train_finetune.json', 'valid': dir+'test_finetune.json'}).shuffle(seed=42)
+    train_texts, train_labels = [prefix + each for each in dataset['train']['document']], dataset['train']['summary']
+    valid_texts, valid_labels = [prefix + each for each in dataset['valid']['document']], dataset['valid']['summary']
+    # use Pegasus Large model as base for fine-tuning
+    model_name = 'google/pegasus-large'
+    #return train_dataset, val_dataset, test_dataset, tokenizer 可以一起投入
+    train_dataset, _, _, tokenizer = prepare_data(model_name, train_texts, train_labels)
+    valid_dataset, _, _, _ = prepare_data(model_name, valid_texts, valid_labels)
+    trainer = prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=valid_dataset)
+    #,val_dataset=valid_dataset
+    print("start training")
+    start_time = time.time()
+    trainer.train()
+    trainer.save_model(output_dir=dir+'pegasus_save')
+    end_time = time.time()
+    print('pegasus_time_cost: ',end_time-start_time,'s')
+
+
+
+'''
+def compute_metrics(eval_pred):
+  predictions, labels = eval_pred
+  decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
+  # Replace -100 in the labels as we can't decode them.
+  labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
+  decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
+    
+  # Rouge expects a newline after each sentence
+  decoded_preds = ["\n".join(nltk.sent_tokenize(pred.strip())) for pred in decoded_preds]
+  decoded_labels = ["\n".join(nltk.sent_tokenize(label.strip())) for label in decoded_labels]
+    
+  result = metric.compute(predictions=decoded_preds, references=decoded_labels, use_stemmer=True)
+  # Extract a few results
+  result = {key: value.mid.fmeasure * 100 for key, value in result.items()}
+    
+  # Add mean generated length
+  prediction_lens = [np.count_nonzero(pred != tokenizer.pad_token_id) for pred in predictions]
+  result["gen_len"] = np.mean(prediction_lens)
+    
+  return {k: round(v, 4) for k, v in result.items()}
+'''
 
 # if __name__=='__main__':
 #   #datadir = "./dataset/"

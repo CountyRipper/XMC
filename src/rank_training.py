@@ -35,7 +35,7 @@ def rank_train(dir,text_data,train_pred_data,train_label_data,model_save_dir):
         for line in raw_text:
             raw_text_list.append(line.strip()) # strip \n
     # train_text 生成出来的-pred预测（没有找mactch，没有combine）stem化 
-    with open(train_pred_src, "r+") as pred_txt: #train_pred.txt
+    with open(train_pred_src, "r+") as pred_txt: #train_combine_labels.txt
         for row in pred_txt:
             pred_label_list.append(row.strip().split(", "))
     with open(train_label_src, "r+") as label_txt: #train_labels_stem.txt
