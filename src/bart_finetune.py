@@ -1,9 +1,7 @@
-
-#from transformers import PegasusForConditionalGeneration, PegasusTokenizer, Seq2SeqTrainer, Seq2SeqTrainingArguments
 import torch
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, Seq2SeqTrainer, Seq2SeqTrainingArguments
+from transformers import BartTokenizer, BartForConditionalGeneration, Seq2SeqTrainer, Seq2SeqTrainingArguments
 
-class PegasusData(torch.utils.data.Dataset):
+class BARTData(torch.utils.data.Dataset):
     def __init__(self, encoding, labels):
         self.encoding = encoding
         self.labels= labels
@@ -16,23 +14,21 @@ class PegasusData(torch.utils.data.Dataset):
 def token_data(texts,labels,tokenizer):
     encodings = tokenizer(texts, truncation=True, padding=True)
     decodings = tokenizer(labels, truncation=True, padding=True)
-    dataset_tokenized = PegasusData(encodings, decodings)
+    dataset_tokenized = BARTData(encodings, decodings)
     return dataset_tokenized
 
-def fine_tune_keybart(dir,train_dir,valid_dir,save_dir,checkdir,freeze_encoder=None):
+def fine_tune_bart(dir,train_dir,valid_dir,save_dir,checkdir,freeze_encoder=None):
     checkdir=dir+checkdir
     train_dir=dir+train_dir #dir+'train_finetune.json'
     valid_dir = dir+valid_dir
-    save_dir = dir+save_dir
-    print('save_dir:'+save_dir)
+    save_dir=dir+save_dir
     print('checkdir:'+checkdir)
-    #print('output_dir:'+output_dir)
+    print('save_dir:'+save_dir)
     device = 'cuda'
-    tokenizer = AutoTokenizer.from_pretrained("bloomberg/KeyBART")
-    model = AutoModelForSeq2SeqLM.from_pretrained("bloomberg/KeyBART").to(device)
+    tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
+    model = BartForConditionalGeneration.from_pretrained("facebook/bart-large").to(device)
     from datasets import load_dataset
-    
-    prefix = "keywords: "
+    prefix = "summary: "
     dataset = load_dataset('json',data_files={'train': train_dir, 'valid': valid_dir}).shuffle(seed=42)
     train_texts, train_labels = [prefix + each for each in dataset['train']['document']], dataset['train']['summary']
     valid_texts, valid_labels = [prefix + each for each in dataset['valid']['document']], dataset['valid']['summary']
@@ -41,7 +37,7 @@ def fine_tune_keybart(dir,train_dir,valid_dir,save_dir,checkdir,freeze_encoder=N
     if freeze_encoder:
         for param in model.model.encoder.parameters():
             param.requires_grad = False
-    batch_size=3
+    batch_size=2
     train_args = Seq2SeqTrainingArguments(
         output_dir=checkdir,
         num_train_epochs=5,           # total number of training epochs

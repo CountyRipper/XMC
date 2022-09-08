@@ -1,5 +1,12 @@
-from base64 import encode
-from head import *
+from cProfile import label
+import json
+from typing import List
+import tqdm
+import nltk
+from nltk.stem import *
+from nltk.stem.porter import *
+from nltk.stem.snowball import SnowballStemmer
+import torch
  
 nltk.download('stopwords')
 #stemmer = SnowballStemmer("english")
@@ -64,9 +71,7 @@ def stem_labels(data_name,outputname=None)->List[str]:
             with open(outputname+".txt","w", encoding='utf8') as f:
                 for i in stem_result:
                     f.write(str(i)+"\n")
-        return stem_labels
-                
-
+        return stem_labels  
     
 """
 将txt转化为json来训练
@@ -118,5 +123,35 @@ def get_all_stemlabels(datadir,outputdir=None)-> List[str]:
     print('all_label_stem outputdir: '+ outputdir )
     return res
         
+def keybart_clean(data_name,outputname=None)-> List[str]:
+    print("keybart_clean")
+    res = []
+    with open(data_name,'w') as f:
+        for row in f:
+            tmp_list = row.split(", ")
+            label_list=[]
+            bug_list=[['- ','-'],[' -','-'],["' ","'"],[" '","'"],['" ','"'],[' "','"']]
+            for each in tmp_list:
+                each = each.strip('"').strip('"').strip("[]")
+                for j in bug_list:
+                    each.replace(j[0],j[1])
+                label_list.append(each)
+                                  
+                                  
+            #label_list = list(map(lambda x: x.strip('"').strip('"').strip("[]") , row.split(", ")))
+            label_list = list(map(lambda x: x.replace(' -','-'),label_list))
+
+def single_pred(model,tokenizer,document_src):
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    #ARTICLE_TO_SUMMARIZE = document_src
+    inputs = tokenizer([document_src], return_tensors='pt', padding=True, truncation=True).to(device)#, padding=True
+  # Generate Summary
+    summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length =64,num_beams = 7).to(device)  #length_penalty = 3.0  top_k = 5
+    pre_result=[]
+    for g  in summary_ids:
+        pre_result.append(tokenizer.decode(g,skip_special_tokens=True, clean_up_tokenization_spaces=True))
+    #pegasus_pred = [tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in summary_ids]  #[2:-2]
+    return pre_result[0]
         
+               
     

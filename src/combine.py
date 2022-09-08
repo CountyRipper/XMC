@@ -1,7 +1,6 @@
 from typing import List
 from sentence_transformers import CrossEncoder
 model = CrossEncoder('cross-encoder/stsb-roberta-base')
-from rouge import Rouge
 from tqdm import tqdm
 
 #getcombine by cross-encoder

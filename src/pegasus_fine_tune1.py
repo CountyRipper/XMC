@@ -16,7 +16,7 @@ Reference:
 
 """
 import time #计时器
-from transformers import PegasusForConditionalGeneration, PegasusTokenizer, Seq2SeqTrainer, Seq2SeqTrainingArguments
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM,Seq2SeqTrainer, Seq2SeqTrainingArguments
 import torch
 #import nltk
 import numpy as np
@@ -41,7 +41,7 @@ def prepare_data(model_name,
   """
   Prepare input data for model fine-tuning
   """
-  tokenizer = PegasusTokenizer.from_pretrained(model_name)
+  tokenizer = AutoTokenizer.from_pretrained(model_name)
   
   prepare_val = False if val_texts is None or val_labels is None else True
   prepare_test = False if test_texts is None or test_labels is None else True
@@ -66,12 +66,12 @@ def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, 
   Prepare configurations and base model for fine-tuning
   """
   torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
-  model = PegasusForConditionalGeneration.from_pretrained(model_name).to(torch_device)
+  model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(torch_device)
 
   if freeze_encoder:
     for param in model.model.encoder.parameters():
       param.requires_grad = False
-  batch_size = 2
+  batch_size = 3
   if val_dataset is not None:
     training_args = Seq2SeqTrainingArguments(
       output_dir=output_dir,           # output directory
@@ -119,7 +119,7 @@ def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, 
 
   return trainer
 
-def Pegasus_fine_tune(dir,model_save,model_check):
+def kb_fine_tune(dir,model_save,model_check):
     #dir = './dataset/EUR-Lex/'
     model_save = dir+model_save
     model_check = dir+model_check
@@ -134,7 +134,7 @@ def Pegasus_fine_tune(dir,model_save,model_check):
     train_texts, train_labels = [prefix + each for each in dataset['train']['document']], dataset['train']['summary']
     valid_texts, valid_labels = [prefix + each for each in dataset['valid']['document']], dataset['valid']['summary']
     # use Pegasus Large model as base for fine-tuning
-    model_name = 'google/pegasus-large'
+    model_name = "bloomberg/KeyBART"
     #return train_dataset, val_dataset, test_dataset, tokenizer 可以一起投入
     train_dataset, _, _, tokenizer = prepare_data(model_name, train_texts, train_labels)
     valid_dataset, _, _, _ = prepare_data(model_name, valid_texts, valid_labels)
@@ -145,7 +145,7 @@ def Pegasus_fine_tune(dir,model_save,model_check):
     trainer.train()
     trainer.save_model(output_dir=model_save)
     end_time = time.time()
-    print('pegasus_time_cost: ',end_time-start_time,'s')
+    print('kb_time_cost: ',end_time-start_time,'s')
 
 
 

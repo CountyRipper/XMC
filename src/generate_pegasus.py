@@ -25,8 +25,12 @@ def get_pred_Pegasus(dir,output_dir,src_dataname,model_path):
     outputdir是输出预测文件位置： dir+generate_result
     srcdata是用于预测的原始文件doc的位置 dir+
     '''
+    output_dir = dir+output_dir
     model_path = dir+model_path
+    src_dataname = dir+src_dataname
+    print('src_data: '+src_dataname)
     print("model_path: "+model_path)
+    print("output: "+output_dir)
     # model save dir
     #dir = './dataset/EUR-Lex/ dataset dir
     model = PegasusForConditionalGeneration.from_pretrained(model_path).to(device)#BART-large-Finetuned
