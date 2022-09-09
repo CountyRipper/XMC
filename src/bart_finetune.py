@@ -1,5 +1,5 @@
 import torch
-from transformers import BartTokenizer, BartForConditionalGeneration, Seq2SeqTrainer, Seq2SeqTrainingArguments
+from transformers import AutoTokenizer,BartTokenizer, BartForConditionalGeneration, Seq2SeqTrainer, Seq2SeqTrainingArguments
 
 class BARTData(torch.utils.data.Dataset):
     def __init__(self, encoding, labels):
@@ -7,7 +7,7 @@ class BARTData(torch.utils.data.Dataset):
         self.labels= labels
     def __getitem__(self, idx):
         item = {key: torch.tensor(val[idx]) for key, val in self.encoding.items()}
-        item['label'] = torch.tensor(self.labels['input_ids'][idx])
+        item['labels'] = torch.tensor(self.labels['input_ids'][idx])
         return item
     def __len__(self):
         return len(self.labels['input_ids'])  # len(self.labels)
@@ -25,10 +25,10 @@ def fine_tune_bart(dir,train_dir,valid_dir,save_dir,checkdir,freeze_encoder=None
     print('checkdir:'+checkdir)
     print('save_dir:'+save_dir)
     device = 'cuda'
-    tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
-    model = BartForConditionalGeneration.from_pretrained("facebook/bart-large").to(device)
+    tokenizer = BartTokenizer.from_pretrained(pretrained_model_name_or_path="facebook/bart-base")
+    model = BartForConditionalGeneration.from_pretrained("facebook/bart-base").to(device)
     from datasets import load_dataset
-    prefix = "summary: "
+    prefix = "summarize: "
     dataset = load_dataset('json',data_files={'train': train_dir, 'valid': valid_dir}).shuffle(seed=42)
     train_texts, train_labels = [prefix + each for each in dataset['train']['document']], dataset['train']['summary']
     valid_texts, valid_labels = [prefix + each for each in dataset['valid']['document']], dataset['valid']['summary']
@@ -37,10 +37,10 @@ def fine_tune_bart(dir,train_dir,valid_dir,save_dir,checkdir,freeze_encoder=None
     if freeze_encoder:
         for param in model.model.encoder.parameters():
             param.requires_grad = False
-    batch_size=2
+    batch_size=4
     train_args = Seq2SeqTrainingArguments(
         output_dir=checkdir,
-        num_train_epochs=5,           # total number of training epochs
+        num_train_epochs=10,           # total number of training epochs
         per_device_train_batch_size=batch_size,   # batch size per device during training, can increase if memory allows
         per_device_eval_batch_size=batch_size,    # batch size for evaluation, can increase if memory allows
         save_steps=30000,                  # number of updates steps before checkpoint saves

@@ -9,7 +9,7 @@ class PegasusData(torch.utils.data.Dataset):
         self.labels= labels
     def __getitem__(self, idx):
         item = {key: torch.tensor(val[idx]) for key, val in self.encoding.items()}
-        item['label'] = torch.tensor(self.labels['input_ids'][idx])
+        item['labels'] = torch.tensor(self.labels['input_ids'][idx])
         return item
     def __len__(self):
         return len(self.labels['input_ids'])  # len(self.labels)
@@ -32,7 +32,7 @@ def fine_tune_keybart(dir,train_dir,valid_dir,save_dir,checkdir,freeze_encoder=N
     model = AutoModelForSeq2SeqLM.from_pretrained("bloomberg/KeyBART").to(device)
     from datasets import load_dataset
     
-    prefix = "keywords: "
+    prefix = "summarize: "
     dataset = load_dataset('json',data_files={'train': train_dir, 'valid': valid_dir}).shuffle(seed=42)
     train_texts, train_labels = [prefix + each for each in dataset['train']['document']], dataset['train']['summary']
     valid_texts, valid_labels = [prefix + each for each in dataset['valid']['document']], dataset['valid']['summary']
@@ -44,7 +44,7 @@ def fine_tune_keybart(dir,train_dir,valid_dir,save_dir,checkdir,freeze_encoder=N
     batch_size=3
     train_args = Seq2SeqTrainingArguments(
         output_dir=checkdir,
-        num_train_epochs=5,           # total number of training epochs
+        num_train_epochs=10,           # total number of training epochs
         per_device_train_batch_size=batch_size,   # batch size per device during training, can increase if memory allows
         per_device_eval_batch_size=batch_size,    # batch size for evaluation, can increase if memory allows
         save_steps=30000,                  # number of updates steps before checkpoint saves

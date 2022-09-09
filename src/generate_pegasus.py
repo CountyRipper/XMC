@@ -12,6 +12,16 @@ def pegasus_pred(model,tokenizer,model_path,src):
     summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length = 64,num_beams = 7).to(device)  #length_penalty = 3.0  top_k = 5
     pegasus_pred = str([tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in summary_ids])#[2:-2]
     return pegasus_pred
+def pegasus_pred_fast(model,tokenizer,src):
+    ARTICLE_TO_SUMMARIZE = src
+    inputs = tokenizer([ARTICLE_TO_SUMMARIZE], return_tensors='pt', padding=True, truncation=True).to(device)#, padding=True
+  # Generate Summary
+    summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length = 64,num_beams = 7).to(device)  #length_penalty = 3.0  top_k = 5
+    #pegasus_pred = str([tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in summary_ids])#[2:-2]
+    pre_result=[]
+    for g  in summary_ids:
+        pre_result.append(tokenizer.decode(g,skip_special_tokens=True, clean_up_tokenization_spaces=True))
+    return pre_result[0]
 #Original!
     """
     _summary_
@@ -90,3 +100,40 @@ def get_pred_Pegasus(dir,output_dir,src_dataname,model_path):
         #f.close()
         #t.close()
 #get_pred_Pegasus("generate_result","test_finetune.json","pegasus_test_save")
+def get_pred_Pegasus_fast(dir,output_dir,src_dataname,model_path):
+    output_dir = dir+output_dir
+    model_path = dir+model_path
+    src_dataname = dir+src_dataname
+    print('src_data: '+src_dataname)
+    print("model_path: "+model_path)
+    print("output: "+output_dir)
+    # model save dir
+    #dir = './dataset/EUR-Lex/ dataset dir
+    model = PegasusForConditionalGeneration.from_pretrained(model_path).to(device)#BART-large-Finetuned
+    tokenizer = PegasusTokenizer.from_pretrained(model_path)
+    data = []
+    dic = [] # dictionary for save each model generate result
+    src_value = [] # using for get source document which is used to feed into model, and get predicting result
+    res = []
+    # open test file 
+    with open(src_dataname, 'r+') as f:
+        for line in f:
+            data.append(json.loads(line))
+        # 进度条可视化 vision process
+        for i in tqdm(range(len(data))): #range(len(data))
+            dic = data[i]
+            src_value = dic["document"]
+            tmp_result = pegasus_pred_fast(model,tokenizer,src_value)
+            #print(tmp_result)
+            pre_labels = tmp_result.strip('"').strip("[]").split(",")
+            l = list(map( lambda x: x.strip().strip("'").strip('[]').strip('"'),pre_labels))
+            dic["pred"] = l
+            sign= ", "
+            res.append(sign.join(l))
+            if i%1000==0:
+                print(res[i])
+            if output_dir:
+                with open(output_dir,'a+') as t:
+                    #json.dump(dic,t)
+                    t.write(res[i])
+                    t.write('\n')

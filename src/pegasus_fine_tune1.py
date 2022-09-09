@@ -75,7 +75,7 @@ def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, 
   if val_dataset is not None:
     training_args = Seq2SeqTrainingArguments(
       output_dir=output_dir,           # output directory
-      num_train_epochs=5,           # total number of training epochs
+      num_train_epochs=10,           # total number of training epochs
       per_device_train_batch_size=batch_size,   # batch size per device during training, can increase if memory allows
       per_device_eval_batch_size=batch_size,    # batch size for evaluation, can increase if memory allows
       save_steps=30000,                  # number of updates steps before checkpoint saves

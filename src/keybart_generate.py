@@ -11,12 +11,12 @@ def keybart_pred(model,tokenizer,document_src):
     #ARTICLE_TO_SUMMARIZE = document_src
     inputs = tokenizer([document_src], return_tensors='pt', padding=True, truncation=True).to(device)#, padding=True
   # Generate Summary
-    summary_ids = model.generate(inputs['input_ids'],max_length = 64,min_length =32,num_beams = 7).to(device)  #length_penalty = 3.0  top_k = 5
+    summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length =64,num_beams = 7).to(device)  #length_penalty = 3.0  top_k = 5
     pre_result=[]
-    for g  in summary_ids:
-        pre_result.append(tokenizer.decode(g,skip_special_tokens=True, clean_up_tokenization_spaces=True))
-    #pegasus_pred = [tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in summary_ids]  #[2:-2]
-    return pre_result[0]
+    # for g  in summary_ids:
+    #     pre_result.append(tokenizer.decode(g,skip_special_tokens=True, clean_up_tokenization_spaces=True))
+    pred = [tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in summary_ids]  #[2:-2]
+    return pred
 #Original!
     """
     _summary_

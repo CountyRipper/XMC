@@ -1,7 +1,6 @@
 from premethod import *
 from pegasus_fine_tune import *
 from pegasus_fine_tune1 import *
-#from head import*
 from generate_pegasus import *
 from combine import *
 from rank_training import rank_train
@@ -37,20 +36,20 @@ if __name__ == '__main__':
     # 注意文件路径
     datadir = ['./dataset/EUR-Lex/','./dataset/Wiki500K/']
     tasks = ['test','train','valid']
-    models = {'pega':0,'bart':1,'kb':0}
+    models = {'pega':1,'bart':0,'kb':0}
     #datapreprocess(datadir[0])
     if models['pega']:
-        Pegasus_fine_tune(datadir[0],"pegasus_save","pegasus_check")
+        #Pegasus_fine_tune(datadir[0],"pegasus_xs_save","pegasus_xs_check")
         for i in range(2):
-            get_pred_Pegasus(datadir[0],"generate_result/"+tasks[i]+"_pred1.txt",tasks[i]+"_finetune.json","pegasus_save")
-            get_combine_list(datadir[0],"generate_result/"+tasks[i]+"_pred1.txt","all_stemlabels.txt",tasks[i]+"_combine_labels1.txt")
+            get_pred_Pegasus_fast(datadir[0],"generate_result/"+tasks[i]+"_pred_xs.txt",tasks[i]+"_finetune.json","pegasus_save")
+            get_combine_list(datadir[0],"generate_result/"+tasks[i]+"_pred_xs.txt","all_stemlabels.txt",tasks[i]+"_combine_labels_xs.txt")
     if models['bart']:
-        #fine_tune_bart(datadir[0],tasks[1]+'_finetune.json',tasks[0]+'_finetune.json','bart_save','bart_check')
-        #for i in range(2):
-            get_pred_bart(datadir[0],"generate_result/"+tasks[1]+"_pred_ba.txt",tasks[1]+"_finetune.json","bart_save")
-            get_combine_list(datadir[0],"generate_result/"+tasks[1]+"_pred_ba.txt","all_stemlabels.txt",tasks[1]+"_combine_labels_ba.txt")
+        fine_tune_bart(datadir[0],tasks[1]+'_finetune.json',tasks[0]+'_finetune.json','bart_save','bart_check')
+        for i in range(2):
+            get_pred_bart(datadir[0],"generate_result/"+tasks[i]+"_pred_ba.txt",tasks[i]+"_finetune.json","bart_save")
+            get_combine_list(datadir[0],"generate_result/"+tasks[i]+"_pred_ba.txt","all_stemlabels.txt",tasks[i]+"_combine_labels_ba.txt")
     else:    
-        kb_fine_tune(datadir[0],"kb_save","kb_check")
+        #kb_fine_tune(datadir[0],"kb_save","kb_check")
         fine_tune_keybart(datadir[0],tasks[1]+'_finetune.json',tasks[0]+'_finetune.json','keybart_save','keybart_test')
         get_pred_Keybart(datadir[0],"generate_result/"+tasks[0]+"_kb_pred.txt",tasks[0]+"_finetune.json","keybart_save")
         get_pred_Keybart(datadir[0],"generate_result/"+tasks[1]+"_kb_pred.txt",tasks[1]+"_finetune.json","keybart_save") 
