@@ -87,7 +87,6 @@ def rank_train(dir,text_data,train_pred_data,train_label_data,model_save_dir):
             fb.write(each)
             fb.write("\n")    
     #print('file complete')
-
     num_epoch = 5
 
     model = CrossEncoder('cross-encoder/stsb-roberta-base', num_labels=1)
@@ -100,6 +99,7 @@ def rank_train(dir,text_data,train_pred_data,train_label_data,model_save_dir):
     # Configure the training
     warmup_steps = math.ceil(len(train_dataloader) * num_epoch * 0.1) #10% of train data for warm-up
     #logger.info("Warmup-steps: {}".format(warmup_steps))
+
 
     model.fit(train_dataloader=train_dataloader,
               epochs=num_epoch,

@@ -9,7 +9,7 @@ def pegasus_pred(model,tokenizer,model_path,src):
     ARTICLE_TO_SUMMARIZE = src
     inputs = tokenizer([ARTICLE_TO_SUMMARIZE], return_tensors='pt', padding=True, truncation=True).to(device)#, padding=True
   # Generate Summary
-    summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length = 64,num_beams = 7).to(device)  #length_penalty = 3.0  top_k = 5
+    summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length = 64,num_beams = 8).to(device)  #length_penalty = 3.0  top_k = 5
     pegasus_pred = str([tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in summary_ids])#[2:-2]
     return pegasus_pred
 def pegasus_pred_fast(model,tokenizer,src):
@@ -111,6 +111,13 @@ def get_pred_Pegasus_fast(dir,output_dir,src_dataname,model_path):
     #dir = './dataset/EUR-Lex/ dataset dir
     model = PegasusForConditionalGeneration.from_pretrained(model_path).to(device)#BART-large-Finetuned
     tokenizer = PegasusTokenizer.from_pretrained(model_path)
+    print('this is the check'+'\n'+'******************************************'+"\n")
+    tokenizer.save_pretrained(dir+"pegasus_tokenizer")
+    tokenizer.save_vocabulary(dir+"pegasus_tokenizer")
+    print(tokenizer.vocab_size)
+    tokenizer.get_added_vocab()
+    print('this is the check2'+'\n'+'******************************************'+"\n")
+    
     data = []
     dic = [] # dictionary for save each model generate result
     src_value = [] # using for get source document which is used to feed into model, and get predicting result

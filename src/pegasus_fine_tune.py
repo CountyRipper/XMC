@@ -71,11 +71,11 @@ def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, 
   if freeze_encoder:
     for param in model.model.encoder.parameters():
       param.requires_grad = False
-  batch_size = 4
+  batch_size = 2
   if val_dataset is not None:
     training_args = Seq2SeqTrainingArguments(
       output_dir=output_dir,           # output directory
-      num_train_epochs=10,           # total number of training epochs
+      num_train_epochs=5,           # total number of training epochs
       per_device_train_batch_size=batch_size,   # batch size per device during training, can increase if memory allows
       per_device_eval_batch_size=batch_size,    # batch size for evaluation, can increase if memory allows
       save_steps=30000,                  # number of updates steps before checkpoint saves
@@ -98,7 +98,7 @@ def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, 
   else:
     training_args = Seq2SeqTrainingArguments(
       output_dir=output_dir,           # output directory
-      num_train_epochs=10,           # total number of training epochs
+      num_train_epochs=5,           # total number of training epochs
       per_device_train_batch_size=batch_size,   # batch size per device during training, can increase if memory allows
       per_device_eval_batch_size=batch_size,    # batch size for evaluation, can increase if memory allows
       save_steps=30000,                  # number of updates steps before checkpoint saves
@@ -130,11 +130,11 @@ def Pegasus_fine_tune(dir,model_save,model_check):
     print(device)
     from datasets import load_dataset
     # dataset = load_dataset("xsum")
-    dataset = load_dataset('json',data_files={'train': dir+'train_finetune.json', 'valid': dir+'test_finetune.json'}).shuffle(seed=42)
+    dataset = load_dataset('json',data_files={'train': dir+'train.json', 'valid': dir+'test.json'}).shuffle(seed=42)
     train_texts, train_labels = [prefix + each for each in dataset['train']['document']], dataset['train']['summary']
     valid_texts, valid_labels = [prefix + each for each in dataset['valid']['document']], dataset['valid']['summary']
     # use Pegasus Large model as base for fine-tuning
-    model_name = 'google/pegasus-xsum'
+    model_name = 'google/pegasus-large'
     #return train_dataset, val_dataset, test_dataset, tokenizer 可以一起投入
     train_dataset, _, _, tokenizer = prepare_data(model_name, train_texts, train_labels)
     valid_dataset, _, _, _ = prepare_data(model_name, valid_texts, valid_labels)

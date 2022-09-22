@@ -3,8 +3,8 @@ from pegasus_fine_tune import *
 from pegasus_fine_tune1 import *
 from generate_pegasus import *
 from combine import *
-from rank_training import rank_train
 from rank import rank
+from rank_training import rank_train
 from p_at_1 import p_at_k
 from keybart_finetune import *
 from keybart_generate import get_pred_Keybart
@@ -35,27 +35,49 @@ def datapreprocess(dir):
 if __name__ == '__main__':
     # 注意文件路径
     datadir = ['./dataset/EUR-Lex/','./dataset/Wiki500K/']
+    k_fold = [0,1,2,3,4]
     tasks = ['test','train','valid']
-    models = {'pega':1,'bart':0,'kb':0}
+    models = {'pega':0,'bart':0,'kb':0}
     #datapreprocess(datadir[0])
+    if len(k_fold)==5:
+        for j in k_fold:
+            k_dir = "/K_fold/"+"K_"+str(j)+"/"
+            if j==0:
+                #for i in range(2):
+                    #get_pred_Pegasus(datadir[0]+k_dir,tasks[i]+"_pred.txt",tasks[i]+".json","pegasus_save")
+                    #get_combine_list(datadir[0]+k_dir,tasks[i]+"_pred.txt","all_stemlabels.txt",tasks[i]+"_combine_labels.txt")
+                #rank_train(datadir[0]+k_dir,tasks[1]+"_texts.txt",tasks[1]+"_combine_labels.txt",tasks[1]+"_labels_stem.txt","cr_en_"+str(j))
+                #rank(datadir[0]+k_dir,tasks[0]+"_texts.txt",tasks[0]+"_combine_labels.txt","cr_en_"+str(j),tasks[0]+"_ranked_labels.txt")
+                res = p_at_k(datadir[0]+k_dir,tasks[0]+"_labels_stem.txt",tasks[0]+"_ranked_labels.txt",datadir[0]+k_dir+"res.txt")
+            else:   
+                Pegasus_fine_tune(datadir[0]+k_dir,"pegasus_save","pegasus_check")
+                for i in range(2):
+                    get_pred_Pegasus(datadir[0]+k_dir,tasks[i]+"_pred.txt",tasks[i]+".json","pegasus_save")
+                    get_combine_list(datadir[0]+k_dir,tasks[i]+"_pred.txt","all_stemlabels.txt",tasks[i]+"_combine_labels.txt")
+                rank_train(datadir[0]+k_dir,tasks[1]+"_texts.txt",tasks[1]+"_combine_labels.txt",tasks[1]+"_labels_stem.txt","cr_en_"+str(j))
+                rank(datadir[0]+k_dir,tasks[0]+"_texts.txt",tasks[0]+"_combine_labels.txt","cr_en_"+str(j),tasks[0]+"_ranked_labels.txt")
+                res = p_at_k(datadir[0]+k_dir,tasks[0]+"_labels_stem.txt",tasks[0]+"_ranked_labels.txt",datadir[0]+k_dir+"res.txt")
+        
+        
     if models['pega']:
         #Pegasus_fine_tune(datadir[0],"pegasus_xs_save","pegasus_xs_check")
         for i in range(2):
-            get_pred_Pegasus_fast(datadir[0],"generate_result/"+tasks[i]+"_pred_xs.txt",tasks[i]+"_finetune.json","pegasus_save")
+            get_pred_Pegasus_fast(datadir[0],"generate_result/"+tasks[i]+"_pred_xs.txt",tasks[i]+"_finetune.json","pegasus_xs_save")
             get_combine_list(datadir[0],"generate_result/"+tasks[i]+"_pred_xs.txt","all_stemlabels.txt",tasks[i]+"_combine_labels_xs.txt")
     if models['bart']:
         fine_tune_bart(datadir[0],tasks[1]+'_finetune.json',tasks[0]+'_finetune.json','bart_save','bart_check')
         for i in range(2):
             get_pred_bart(datadir[0],"generate_result/"+tasks[i]+"_pred_ba.txt",tasks[i]+"_finetune.json","bart_save")
             get_combine_list(datadir[0],"generate_result/"+tasks[i]+"_pred_ba.txt","all_stemlabels.txt",tasks[i]+"_combine_labels_ba.txt")
-    else:    
+    if models['kb']:    
         #kb_fine_tune(datadir[0],"kb_save","kb_check")
-        fine_tune_keybart(datadir[0],tasks[1]+'_finetune.json',tasks[0]+'_finetune.json','keybart_save','keybart_test')
-        get_pred_Keybart(datadir[0],"generate_result/"+tasks[0]+"_kb_pred.txt",tasks[0]+"_finetune.json","keybart_save")
-        get_pred_Keybart(datadir[0],"generate_result/"+tasks[1]+"_kb_pred.txt",tasks[1]+"_finetune.json","keybart_save") 
+        #fine_tune_keybart(datadir[0],tasks[1]+'_finetune.json',tasks[0]+'_finetune.json','keybart_save','keybart_test')
+        for i in range(2):
+            get_pred_Keybart(datadir[0],"generate_result/"+tasks[i]+"_pred_kb.txt",tasks[i]+"_finetune.json","keybart_save")
+            #get_combine_list(datadir[0],"generate_result/"+tasks[i]+"_pred_kb.txt","all_labels_sterm.txt",tasks[i]+"_combine_labels_kb.txt")
     #get_combine_list(datadir[0],"generate_result/"+tasks[0]+"_pred.txt","all_stemlabels.txt",tasks[0]+"_combine_labels.txt")
     #get_combine_list(datadir[0],"generate_result/"+tasks[1]+"_pred.txt","all_stemlabels.txt",tasks[1]+"_combine_labels.txt")
-    #rank_train(datadir[0],tasks[1]+"_texts.txt",tasks[1]+"_combine_labels1.txt",tasks[1]+"_labels_stem.txt","cr_en")
-    #rank(datadir[0],tasks[0]+"_texts.txt",tasks[0]+"_combine_labels1.txt","cr_en",tasks[0]+"_ranked_labels1.txt")
-    #res = p_at_k(datadir[0],tasks[0]+"_labels_stem.txt",tasks[0]+"_ranked_labels1.txt")
+    #rank_train(datadir[0],tasks[1]+"_texts.txt",tasks[1]+"_combine_labels.txt",tasks[1]+"_labels_stem.txt","cr_en_l")
+    #rank(datadir[0],tasks[0]+"_texts.txt",tasks[0]+"_combine_labels.txt","cr_en_l",tasks[0]+"_ranked_labels.txt")
+    #res = p_at_k(datadir[0],tasks[0]+"_labels_stem.txt",tasks[0]+"_ranked_labels.txt")
     

@@ -5,11 +5,12 @@ from nltk.stem import *
 from nltk.stem.porter import *
 from nltk.stem.snowball import SnowballStemmer
 from nltk.tokenize import word_tokenize  
+import datetime
 nltk.download('stopwords')
 
 stemmer = SnowballStemmer("english")
 stemmer2 = SnowballStemmer("english", ignore_stopwords=True)
-def p_at_k(dir, src_label_dir,pred_label_dir)->list:
+def p_at_k(dir, src_label_dir,pred_label_dir,outputdir)->list:
     src_label_dir = dir+src_label_dir
     pred_label_dir = dir+pred_label_dir
     print("p_at_k:"+'\n')
@@ -50,10 +51,25 @@ def p_at_k(dir, src_label_dir,pred_label_dir)->list:
             p_at_1_count+=p1
             p_at_3_count+=p3
             p_at_5_count+=p5
-        print('p@1= '+str(p_at_1_count/len(pred_label_list)))
-        print('p@3= '+str(p_at_3_count/ (3*len(pred_label_list))))
-        print('p@5= '+str(p_at_5_count/ (5*len(pred_label_list))))
-        return [p_at_1_count,p_at_3_count,p_at_5_count]      
+        p1 = p_at_1_count/len(pred_label_list)
+        p3 = p_at_3_count/ (3*len(pred_label_list))
+        p5 = p_at_5_count/ (5*len(pred_label_list))
+        print('p@1= '+str(p1))
+        print('p@3= '+str(p3))
+        print('p@5= '+str(p5))
+        if outputdir:
+            with open(outputdir,'w+')as w:
+                w.write("\n")
+                now_time = datetime.datetime.now()
+                time_str = now_time.strftime('%Y-%m-%d %H:%M:%S')
+                w.write("time: "+time_str+"\n")
+                w.write("src_label: "+src_label_dir+"\n")
+                w.write('pred_label: '+ pred_label_dir+"\n")
+                w.write("p@1="+str(p1)+"\n")
+                w.write("p@3="+str(p3)+"\n")
+                w.write("p@5="+str(p5)+"\n")
+                
+        return [p1,p3,p5]      
             
 # p_max = 0
 # p_at_1_count = 0

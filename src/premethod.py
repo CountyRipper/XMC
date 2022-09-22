@@ -7,7 +7,8 @@ from nltk.stem import *
 from nltk.stem.porter import *
 from nltk.stem.snowball import SnowballStemmer
 import torch
- 
+import xml.etree.ElementTree as ET
+from xclib.data import data_utils  
 nltk.download('stopwords')
 #stemmer = SnowballStemmer("english")
 stemmer2 = SnowballStemmer("english", ignore_stopwords=True)
@@ -72,7 +73,7 @@ def stem_labels(data_name,outputname=None)->List[str]:
                 for i in stem_result:
                     f.write(str(i)+"\n")
         return stem_labels  
-    
+   
 """
 将txt转化为json来训练
 outputname shold be: data_name+".json",注意output dir，并且都是词干化的
@@ -153,5 +154,103 @@ def single_pred(model,tokenizer,document_src):
     #pegasus_pred = [tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in summary_ids]  #[2:-2]
     return pre_result[0]
         
-               
+def xml_para(src_data,outputdata=None):
+    tree = ET.parse(src_data)
+    root = tree.getroot()
+    res = []
+    for each in root:
+        for i in each:
+            if(i.tag=='tags'):
+                for j in i:
+                    for k in j :
+                        if k.tag=='name':
+                            res.append(k.text)
+    if outputdata:
+        with open(outputdata,'w+')as w:
+            for i in res:
+                w.write(i+"\n")        
+    return res
+
+def bow_label_map(text_data,f_data,output=None):
+    # Read file with features and labels (old format from XMLRepo) 'train.txt'
+    features, tabels, num_samples, num_features, num_labels = data_utils.read_data(text_data)
+    # Read sparse file (see docstring for more) f_data='trn_X_Xf.txt'
+    # header can be set to false (if required)
+    mylabels = []
+    mylabels = data_utils.read_sparse_file(f_data, header=True)
+
+# Write sparse file (with header)
+    data_utils.write_sparse_file(mylabels, output)
+    
+def k_fold_split(dir,outputdir):
+    print('k_fold_split')
+    print('dir: '+dir)
+    print('output: '+ outputdir)
+    train_data = dir+"train_finetune.json"
+    test_data = dir+"test_finetune.json"
+    train_text = dir+"train_texts.txt"
+    train_labels = dir+"train_labels_stem.txt"
+    test_text = dir+"test_texts.txt"
+    test_labels = dir+"test_labels_stem.txt"
+    label_sum = []
+    text_sum = []
+    sum = []
+    with open(train_data,'r+') as tf:
+        for row in tf:
+            sum.append(json.loads(row))
+    with open(test_data,'r+') as tf:
+        for row in tf:
+            sum.append(json.loads(row))
+    with open(train_text,'r+') as f:
+        for row in f:
+            text_sum.append(row)
+    with open(test_text,'r+') as f:
+        for row in f:
+            text_sum.append(row)
+    with open(train_labels,'r+') as f:
+        for row in f:
+            label_sum.append(row)
+    with open(test_labels,'r+') as f:
+        for row in f:
+            label_sum.append(row)
+    for i in range(5):
+        test_j=[]
+        train_j=[]
+        test_l=[]
+        train_l=[]
+        test_t=[]
+        train_t=[]
+        for j in range(len(sum)):
+            if j%5==i:
+                test_j.append(sum[j])
+                test_l.append(label_sum[j])
+                test_t.append(text_sum[j])
+            else:
+                train_j.append(sum[j])
+                train_l.append(label_sum[j])
+                train_t.append(text_sum[j]) 
+        cur_dir= outputdir+"K_"+str(i)+"/"       
+        with open(cur_dir+"test.json",'w+') as w:
+            for i in test_j:
+                json.dump(i,w)
+                w.write("\n")
+        with open(cur_dir+"train.json",'w+') as w:
+            for i in train_j:
+                json.dump(i,w)
+                w.write("\n")
+        with open(cur_dir+"train_texts.txt",'w+') as w:
+            for i in train_t:
+                w.write(i)
+        with open(cur_dir+"test_texts.txt",'w+') as w:
+            for i in test_t:
+                w.write(i)
+        with open(cur_dir+"train_labels_stem.txt",'w+') as w:
+            for i in train_l:
+                w.write(i)
+        with open(cur_dir+"test_labels_stem.txt",'w+') as w:
+            for i in test_l:
+                w.write(i)
+        
+            
+
     

@@ -8,15 +8,16 @@ from tqdm import tqdm
 device = 'cuda'#'cpu
 def keybart_pred(model,tokenizer,document_src):
     
-    #ARTICLE_TO_SUMMARIZE = document_src
-    inputs = tokenizer([document_src], return_tensors='pt', padding=True, truncation=True).to(device)#, padding=True
+    ARTICLE_TO_SUMMARIZE = document_src
+    #inputs = tokenizer([ARTICLE_TO_SUMMARIZE], return_tensors='pt', padding=True, truncation=True).to(device)#, padding=True
+    inputs = tokenizer([ARTICLE_TO_SUMMARIZE], max_length = 512,return_tensors='pt').to(device)#, padding=True
   # Generate Summary
-    summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length =64,num_beams = 7).to(device)  #length_penalty = 3.0  top_k = 5
+    summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length =64,num_beams = 10).to(device)  #length_penalty = 3.0  top_k = 5
     pre_result=[]
-    # for g  in summary_ids:
-    #     pre_result.append(tokenizer.decode(g,skip_special_tokens=True, clean_up_tokenization_spaces=True))
-    pred = [tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in summary_ids]  #[2:-2]
-    return pred
+    pre_result.append(tokenizer.batch_decode(summary_ids,skip_special_tokens=True, clean_up_tokenization_spaces=True,pad_to_multiple_of=2))
+  
+    #pred = str([tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in summary_ids])  #[2:-2]
+    return str(pre_result[0])
 #Original!
     """
     _summary_
@@ -63,18 +64,34 @@ def get_pred_Keybart(dir,output_dir,src_dataname,model_path):
             src_value = dic["document"]
             tmp_result = keybart_pred(model,tokenizer,src_value)
             #print(tmp_result)
-            pre_labels = tmp_result.strip('"').strip("[]").split(",")
-            l = list(map( lambda x: x.strip().strip("'"),pre_labels))
-            dic["pred"] = l
+            # pre_labels = tmp_result.strip('"').strip("[]").split(",")
+            # l = list(map( lambda x: x.strip().strip("'"),pre_labels))
+            # dic["pred"] = l
+            # sign= ", "
+            # res.append(sign.join(l))
+            # if i%1000==0:
+            #     print(res[i])
+            dic["pred"] = tmp_result.replace ('\\','')
+            res_labels=[]
+            pre_result=dic["pred"].strip("'").strip("[]").strip('\"').strip("[]").strip("\\").strip("'").split(",")
+            for j in range(len(pre_result)):
+                tmpstr = pre_result[j].strip(" ").strip("'")
+                if tmpstr=='':
+                    continue
+                res_labels.append(tmpstr)
+            # if output_dir:
+            #     with open(output_dir,'a+') as t:
+            #         #json.dump(dic,t)
+            #         t.write(res[i])
+            #         t.write('\n')
             sign= ", "
-            res.append(sign.join(l))
+            res.append(sign.join(res_labels))
             if i%1000==0:
                 print(res[i])
-            if output_dir:
-                with open(output_dir,'a+') as t:
-                    #json.dump(dic,t)
-                    t.write(res[i])
-                    t.write('\n')
+            with open(output_dir,'a+') as t:
+                #json.dump(dic,t)
+                t.write(res[i])
+                t.write('\n')
 
 def zero_shot_keybart_generation(dir,output_dir,src_dataname) ->List[str]:
     output_dir = dir+output_dir
