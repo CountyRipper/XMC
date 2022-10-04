@@ -1,5 +1,7 @@
 from cProfile import label
+from logging import Logger
 import json
+import logging
 from typing import List
 import tqdm
 import nltk
@@ -12,6 +14,9 @@ from xclib.data import data_utils
 nltk.download('stopwords')
 #stemmer = SnowballStemmer("english")
 stemmer2 = SnowballStemmer("english", ignore_stopwords=True)
+logging.basicConfig(level = logging.INFO,format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 
 '''
 get all labels without repulit.
@@ -124,23 +129,41 @@ def get_all_stemlabels(datadir,outputdir=None)-> List[str]:
     print('all_label_stem outputdir: '+ outputdir )
     return res
         
-def keybart_clean(data_name,outputname=None)-> List[str]:
-    print("keybart_clean")
+def bart_clean(data_name,outputname=None)-> List[str]:
+    #input dir = XXX_pred.txt?
+    '''
+    替换思路： “ 全部替换为空， [' ']全部替换为空，仅限eurlex-4k
+    '''
+    logger.info("bart_clean")
+    logger.info("data_name: "+data_name)
+    logger.info("outputname: "+outputname)
     res = []
-    with open(data_name,'w') as f:
+    with open(data_name,'r+') as f:
         for row in f:
             tmp_list = row.split(", ")
             label_list=[]
-            bug_list=[['- ','-'],[' -','-'],["' ","'"],[" '","'"],['" ','"'],[' "','"']]
-            for each in tmp_list:
-                each = each.strip('"').strip('"').strip("[]")
-                for j in bug_list:
-                    each.replace(j[0],j[1])
-                label_list.append(each)
-                                  
-                                  
-            #label_list = list(map(lambda x: x.strip('"').strip('"').strip("[]") , row.split(", ")))
-            label_list = list(map(lambda x: x.replace(' -','-'),label_list))
+            #bug_list=[['- ','-'],[' -','-'],["' ","'"],[" '","'"],['" ','"'],[' "','"']]
+            
+            label_list = list(map(lambda x: x.replace('["',", ").replace('"]',", ").replace("['",", ").replace("']",", ").replace('"','').replace("' ",", ").replace(" '",","),tmp_list))
+            #label_list = list(map(lambda x:x))  
+            #flag=True
+            bracelet={"l":0,"r":0}
+            for i in range(len(label_list)):
+                for j in range(len(label_list[i])):
+                    if label_list[i][j]=="(": bracelet["l"]=1
+                    if label_list[i][j]==")": bracelet["r"]=1
+                if bracelet["l"]==1 and bracelet["r"]==1:
+                    i=i
+                else: 
+                    label_list[i]=label_list[i].replace("(","").replace(")","")
+                                                
+            res.append(label_list)                      
+    if outputname:
+        with open(outputname,"w+") as w:
+            for row in res:
+                w.write(", ".join(row))
+                    
+                
 
 def single_pred(model,tokenizer,document_src):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -153,7 +176,18 @@ def single_pred(model,tokenizer,document_src):
         pre_result.append(tokenizer.decode(g,skip_special_tokens=True, clean_up_tokenization_spaces=True))
     #pegasus_pred = [tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in summary_ids]  #[2:-2]
     return pre_result[0]
-        
+
+def batch_pred(model,tokenizer,documents)->List[List]:
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    #ARTICLE_TO_SUMMARIZE = document_src
+    inputs = tokenizer(documents, return_tensors='pt', padding=True, truncation=True).to(device)#, padding=True
+  # Generate Summary
+    summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length =64,num_beams = 7).to(device)  #length_penalty = 3.0  top_k = 5
+    pre_result=[]
+    pre_result.append(tokenizer.batch_decode(summary_ids,skip_special_tokens=True, clean_up_tokenization_spaces=True,pad_to_multiple_of=2))
+    #pred = str([tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in summary_ids])  #[2:-2]
+    return str(pre_result[0])
+            
 def xml_para(src_data,outputdata=None):
     tree = ET.parse(src_data)
     root = tree.getroot()
@@ -182,7 +216,10 @@ def bow_label_map(text_data,f_data,output=None):
 # Write sparse file (with header)
     data_utils.write_sparse_file(mylabels, output)
     
-def k_fold_split(dir,outputdir):
+def k_fold_split(dir,outputdir,k:int = 5):
+    #输入数据文件，输出目标文件夹，输入包括train/test_finetune.json
+    #train/test_texts.txt   train/test_labels_stem.txt(词干化)
+    #分割出k个
     print('k_fold_split')
     print('dir: '+dir)
     print('output: '+ outputdir)
@@ -213,7 +250,7 @@ def k_fold_split(dir,outputdir):
     with open(test_labels,'r+') as f:
         for row in f:
             label_sum.append(row)
-    for i in range(5):
+    for i in range(k):
         test_j=[]
         train_j=[]
         test_l=[]
@@ -250,7 +287,8 @@ def k_fold_split(dir,outputdir):
         with open(cur_dir+"test_labels_stem.txt",'w+') as w:
             for i in test_l:
                 w.write(i)
-        
+
+    
             
 
     

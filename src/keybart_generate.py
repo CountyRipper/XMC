@@ -10,9 +10,9 @@ def keybart_pred(model,tokenizer,document_src):
     
     ARTICLE_TO_SUMMARIZE = document_src
     #inputs = tokenizer([ARTICLE_TO_SUMMARIZE], return_tensors='pt', padding=True, truncation=True).to(device)#, padding=True
-    inputs = tokenizer([ARTICLE_TO_SUMMARIZE], max_length = 512,return_tensors='pt').to(device)#, padding=True
+    inputs = tokenizer([ARTICLE_TO_SUMMARIZE], return_tensors='pt', padding=True, truncation=True).to(device)#, padding=True
   # Generate Summary
-    summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length =64,num_beams = 10).to(device)  #length_penalty = 3.0  top_k = 5
+    summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length =64,num_beams = 7).to(device)  #length_penalty = 3.0  top_k = 5
     pre_result=[]
     pre_result.append(tokenizer.batch_decode(summary_ids,skip_special_tokens=True, clean_up_tokenization_spaces=True,pad_to_multiple_of=2))
   
@@ -66,7 +66,7 @@ def get_pred_Keybart(dir,output_dir,src_dataname,model_path):
             #print(tmp_result)
             # pre_labels = tmp_result.strip('"').strip("[]").split(",")
             # l = list(map( lambda x: x.strip().strip("'"),pre_labels))
-            # dic["pred"] = l
+            # dic["pred"] = lg
             # sign= ", "
             # res.append(sign.join(l))
             # if i%1000==0:
