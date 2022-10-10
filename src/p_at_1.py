@@ -58,7 +58,7 @@ def p_at_k(dir, src_label_dir,pred_label_dir,outputdir)->list:
         print('p@3= '+str(p3))
         print('p@5= '+str(p5))
         if outputdir:
-            with open(outputdir,'w+')as w:
+            with open(outputdir,'a+')as w:
                 w.write("\n")
                 now_time = datetime.datetime.now()
                 time_str = now_time.strftime('%Y-%m-%d %H:%M:%S')

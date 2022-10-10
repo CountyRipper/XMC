@@ -1,9 +1,8 @@
-from cProfile import label
 from logging import Logger
 import json
 import logging
 from typing import List
-import tqdm
+from tqdm import tqdm
 import nltk
 from nltk.stem import *
 from nltk.stem.porter import *
@@ -288,7 +287,70 @@ def k_fold_split(dir,outputdir,k:int = 5):
             for i in test_l:
                 w.write(i)
 
+def split_jsonfile(data_dir,output_dir,k =10):
+    # 切分 json文件
+    logger.info("split_file:")
+    logger.info("data_dir: "+data_dir)
+    logger.info("output_dir: "+output_dir)
+    sum=[]
+    with open(data_dir,'r+') as f:
+        for ind, row in enumerate(tqdm(f)):
+            if ind%k==0:
+                sum.append(json.loads(row))
+    with open(output_dir,'w+') as w:
+        for j in tqdm(sum):
+            json.dump(j,w)
+            w.write("\n")
+    logger.info("split "+data_dir+" end.")
+def wiki500_change(json_dir,map_dir,js_output_dir,label_output_dir,texts_output_dir):
+    #拿取text和标签index，然后用label_dir替换标签
+    logger.info("wiki500_change")
+    logger.info("json_dir: "+json_dir)
+    logger.info("map_dir:"+map_dir)
+    logger.info("js_output_dir: "+js_output_dir)
+    logger.info("label_output:"+label_output_dir)
+    logger.info("texts_output_dir"+texts_output_dir)
+    doc=[]
+    label_map = []
+    with open(map_dir,'r+') as map_f:
+        for row in tqdm(map_f):
+            label = row.replace("Category:","").split("->")[0]
+            label = label.replace("_"," ")
+            label_map.append(label)
+    #js_dic={}
+    with open(json_dir,'r+') as j_file:
+        for i in tqdm(j_file):
+            js_dic={}
+            js_f = json.loads(i)
+            #仅取content和target_ind
+            js_dic['document'] = js_f['content']
+            js_dic['target_ind'] = js_f['target_ind']
+            doc.append(js_dic)
+    for i in range(len(doc)):
+        label_list = []
+        for j in doc[i]['target_ind']:
+            label_list.append(label_map[j])
+        doc[i]['summary']= label_list
+        #del doc[i]['target_ind']
+       
+    with open(js_output_dir,'w+') as w:
+        for j in tqdm(doc):
+            json.dump(j,w)
+            w.write("\n")
+    with open(label_output_dir,'w+') as w:
+        for j in tqdm(doc):
+            sign = ", "
+            w.write(sign.join(j['summary']))
+            w.write("\n")
+    with open(texts_output_dir,'w+') as w:
+        for j in tqdm(doc):
+            w.write(j['document'])
+            w.write("\n")
     
+        
+                
+        
+        
             
 
     

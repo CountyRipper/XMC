@@ -28,8 +28,8 @@ def fine_tune_keybart(dir,train_dir,valid_dir,save_dir,checkdir,freeze_encoder=N
     print('checkdir:'+checkdir)
     #print('output_dir:'+output_dir)
     device = 'cuda'
-    tokenizer = AutoTokenizer.from_pretrained("bloomberg/KeyBART")
-    model = AutoModelForSeq2SeqLM.from_pretrained("bloomberg/KeyBART").to(device)
+    tokenizer = AutoTokenizer.from_pretrained("bloomberg/KeyBART",cache_dir='./models')
+    model = AutoModelForSeq2SeqLM.from_pretrained("bloomberg/KeyBART",cache_dir='./models').to(device)
     from datasets import load_dataset
     
     prefix = "summarize: "

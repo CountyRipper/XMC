@@ -119,10 +119,14 @@ def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, 
 
   return trainer
 
-def Pegasus_fine_tune(dir,model_save,model_check):
+def Pegasus_fine_tune(dir,train_dir,valid_dir,model_save,model_check):
     #dir = './dataset/EUR-Lex/'
     model_save = dir+model_save
     model_check = dir+model_check
+    train_dir=dir+train_dir #dir+'train_finetune.json'
+    valid_dir = dir+valid_dir
+    print("train_dir:"+ train_dir)
+    print("valid_dir:" + valid_dir)
     print("model_svae: "+model_save)
     print("model_check: "+model_check)
     prefix = "summarize: "
@@ -130,7 +134,7 @@ def Pegasus_fine_tune(dir,model_save,model_check):
     print(device)
     from datasets import load_dataset
     # dataset = load_dataset("xsum")
-    dataset = load_dataset('json',data_files={'train': dir+'train.json', 'valid': dir+'test.json'}).shuffle(seed=42)
+    dataset = load_dataset('json',data_files={'train': train_dir, 'valid': valid_dir}).shuffle(seed=42)
     train_texts, train_labels = [prefix + each for each in dataset['train']['document']], dataset['train']['summary']
     valid_texts, valid_labels = [prefix + each for each in dataset['valid']['document']], dataset['valid']['summary']
     # use Pegasus Large model as base for fine-tuning

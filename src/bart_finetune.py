@@ -25,8 +25,9 @@ def fine_tune_bart(dir,train_dir,valid_dir,save_dir,checkdir,freeze_encoder=None
     print('checkdir:'+checkdir)
     print('save_dir:'+save_dir)
     device = 'cuda'
-    tokenizer = BartTokenizer.from_pretrained(pretrained_model_name_or_path="facebook/bart-base")
-    model = BartForConditionalGeneration.from_pretrained("facebook/bart-base").to(device)
+    model = BartForConditionalGeneration.from_pretrained("facebook/bart-base",cache_dir='./models').to(device)
+    tokenizer = BartTokenizer.from_pretrained(pretrained_model_name_or_path="facebook/bart-base",cache_dir='./models')
+    
     from datasets import load_dataset
     prefix = "summarize: "
     dataset = load_dataset('json',data_files={'train': train_dir, 'valid': valid_dir}).shuffle(seed=42)
