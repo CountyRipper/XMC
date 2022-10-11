@@ -60,7 +60,7 @@ if __name__ == '__main__':
         
     gener = "generate_result/"    
     if models['pega']:
-        Pegasus_fine_tune(datadir[0],tasks[1]+'_finetune.json',tasks[0]+'_finetune.json',"pegasus_save","pegasus_check")
+        Pegasus_fine_tune(datadir[1],tasks[1]+'_finetune.json',tasks[0]+'_finetune.json',"pegasus_save","pegasus_check")
         for i in range(2):
             get_pred_Pegasus_fast(datadir[1],gener+tasks[i]+"_pred.txt",tasks[i]+"_finetune.json","pegasus_save")
             get_combine_list(datadir[1],gener+tasks[i]+"_pred.txt","all_stemlabels.txt",tasks[i]+"_combine_labels.txt")
@@ -68,16 +68,16 @@ if __name__ == '__main__':
         rank(datadir[1],tasks[0]+"_texts.txt",tasks[0]+"_combine_labels.txt","cr_en",tasks[0]+"_ranked_labels.txt")
         res = p_at_k(datadir[1],tasks[0]+"_labels_stem.txt",tasks[0]+"_ranked_labels.txt",datadir[1]+"res_pega.txt")
     if models['bart']:
-        #fine_tune_bart(datadir[0],tasks[1]+'_finetune.json',tasks[0]+'_finetune.json','bart_save','bart_check')
-        #for i in range(2):
-            #get_pred_bart(datadir[0],gener+tasks[i]+"_pred_ba.txt",tasks[i]+"_finetune.json","bart_save")
-            #bart_clean(datadir[0]+gener+tasks[i]+"_pred_ba.txt",datadir[0]+gener+tasks[i]+"_pred_ba_c.txt")
-            #get_combine_list(datadir[0],gener+tasks[i]+"_pred_ba_c.txt","all_stemlabels.txt",gener+tasks[i]+"_combine_labels_ba.txt")
-        #rank_train(datadir[0],tasks[1]+"_texts.txt",gener+tasks[1]+"_combine_labels_ba.txt",tasks[1]+"_labels_stem.txt","cr_en_ba")
-        rank(datadir[0],tasks[0]+"_texts.txt",gener+tasks[0]+"_combine_labels_ba.txt","cr_en_ba",gener+tasks[0]+"_ranked_labels_ba.txt")
-        res = p_at_k(datadir[0],tasks[0]+"_labels_stem.txt",gener+tasks[0]+"_ranked_labels_ba.txt",datadir[0]+"ba_res.txt")
+        fine_tune_bart(datadir[1],tasks[1]+'_finetune.json',tasks[0]+'_finetune.json','bart_save','bart_check')
+        for i in range(2):
+            get_pred_bart(datadir[1],gener+tasks[i]+"_pred_ba.txt",tasks[i]+"_finetune.json","bart_save")
+            bart_clean(datadir[1]+gener+tasks[i]+"_pred_ba.txt",datadir[0]+gener+tasks[i]+"_pred_ba_c.txt")
+            get_combine_list(datadir[1],gener+tasks[i]+"_pred_ba_c.txt","all_stemlabels.txt",gener+tasks[i]+"_combine_labels_ba.txt")
+        rank_train(datadir[1],tasks[1]+"_texts.txt",gener+tasks[1]+"_combine_labels_ba.txt",tasks[1]+"_labels_stem.txt","cr_en_ba")
+        rank(datadir[1],tasks[0]+"_texts.txt",gener+tasks[0]+"_combine_labels_ba.txt","cr_en_ba",gener+tasks[0]+"_ranked_labels_ba.txt")
+        res = p_at_k(datadir[1],tasks[0]+"_labels_stem.txt",gener+tasks[0]+"_ranked_labels_ba.txt",datadir[0]+"ba_res.txt")
     if models['kb']:    
-        kb_fine_tune(datadir[0],"kb_save","kb_check")
+        #kb_fine_tune(datadir[0],"kb_save","kb_check")
         fine_tune_keybart(datadir[0],tasks[1]+'_finetune.json',tasks[0]+'_finetune.json','keybart_save','keybart_test')
         for i in range(2):
             get_pred_Keybart(datadir[0],gener+tasks[i]+"_pred_kb.txt",tasks[i]+"_finetune.json","keybart_save")

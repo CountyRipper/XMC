@@ -38,10 +38,10 @@ def fine_tune_bart(dir,train_dir,valid_dir,save_dir,checkdir,freeze_encoder=None
     if freeze_encoder:
         for param in model.model.encoder.parameters():
             param.requires_grad = False
-    batch_size=4
+    batch_size=2
     train_args = Seq2SeqTrainingArguments(
         output_dir=checkdir,
-        num_train_epochs=10,           # total number of training epochs
+        num_train_epochs=5,           # total number of training epochs
         per_device_train_batch_size=batch_size,   # batch size per device during training, can increase if memory allows
         per_device_eval_batch_size=batch_size,    # batch size for evaluation, can increase if memory allows
         save_steps=30000,                  # number of updates steps before checkpoint saves

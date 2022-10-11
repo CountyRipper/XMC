@@ -9,7 +9,9 @@ from nltk.stem.porter import *
 from nltk.stem.snowball import SnowballStemmer
 import torch
 import xml.etree.ElementTree as ET
-from xclib.data import data_utils  
+
+from detector import log
+#from xclib.data import data_utils  
 nltk.download('stopwords')
 #stemmer = SnowballStemmer("english")
 stemmer2 = SnowballStemmer("english", ignore_stopwords=True)
@@ -127,6 +129,7 @@ def get_all_stemlabels(datadir,outputdir=None)-> List[str]:
     print('get_all_stemlabels:end()')
     print('all_label_stem outputdir: '+ outputdir )
     return res
+
         
 def bart_clean(data_name,outputname=None)-> List[str]:
     #input dir = XXX_pred.txt?
@@ -286,7 +289,7 @@ def k_fold_split(dir,outputdir,k:int = 5):
         with open(cur_dir+"test_labels_stem.txt",'w+') as w:
             for i in test_l:
                 w.write(i)
-
+@log
 def split_jsonfile(data_dir,output_dir,k =10):
     # 切分 json文件
     logger.info("split_file:")
@@ -326,11 +329,13 @@ def wiki500_change(json_dir,map_dir,js_output_dir,label_output_dir,texts_output_
             js_dic['document'] = js_f['content']
             js_dic['target_ind'] = js_f['target_ind']
             doc.append(js_dic)
+    label_set=[]
     for i in range(len(doc)):
         label_list = []
         for j in doc[i]['target_ind']:
-            label_list.append(label_map[j])
-        doc[i]['summary']= label_list
+            label_list.append(label_map[j].replace("_"," "))
+        label_set.append(label_list)
+        doc[i]['summary']= str(label_list)
         #del doc[i]['target_ind']
        
     with open(js_output_dir,'w+') as w:
@@ -338,9 +343,9 @@ def wiki500_change(json_dir,map_dir,js_output_dir,label_output_dir,texts_output_
             json.dump(j,w)
             w.write("\n")
     with open(label_output_dir,'w+') as w:
-        for j in tqdm(doc):
+        for j in label_set:
             sign = ", "
-            w.write(sign.join(j['summary']))
+            w.write(sign.join(j))
             w.write("\n")
     with open(texts_output_dir,'w+') as w:
         for j in tqdm(doc):
