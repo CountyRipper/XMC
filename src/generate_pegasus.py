@@ -1,5 +1,6 @@
 from transformers import PegasusForConditionalGeneration, PegasusTokenizer
 import json
+from premethod import batch_pred
 # import torch
 # import ast
 from tqdm import tqdm
@@ -122,25 +123,30 @@ def get_pred_Pegasus_fast(dir,output_dir,src_dataname,model_path):
     dic = [] # dictionary for save each model generate result
     src_value = [] # using for get source document which is used to feed into model, and get predicting result
     res = []
+    batch=[]
     # open test file 
     with open(src_dataname, 'r+') as f:
         for line in f:
             data.append(json.loads(line))
         # 进度条可视化 vision process
-        for i in tqdm(range(len(data))): #range(len(data))
-            dic = data[i]
-            src_value = dic["document"]
-            tmp_result = pegasus_pred_fast(model,tokenizer,src_value)
-            #print(tmp_result)
-            pre_labels = tmp_result.strip('"').strip("[]").split(",")
-            l = list(map( lambda x: x.strip().strip("'").strip('[]').strip('"'),pre_labels))
-            dic["pred"] = l
-            sign= ", "
-            res.append(sign.join(l))
-            if i%1000==0:
-                print(res[i])
-            if output_dir:
-                with open(output_dir,'a+') as t:
-                    #json.dump(dic,t)
-                    t.write(res[i])
-                    t.write('\n')
+        f=open(output_dir,'w+')
+        f.close()
+        with open(output_dir,'a+') as t:
+            for i in tqdm(range(len(data))): #range(len(data))
+                if i==0 and i%10!=0:
+                #填充 batch
+                    batch.append(data[i]['document'])
+                else:
+                    tmp_result = batch_pred(model,tokenizer,batch)
+                    for j in tmp_result:
+                        l_labels = [] #l_label 是str转 label的集合
+                        pre = j.strip('[]').strip().split(",")
+                        for k in range(len(pre)):
+                            tmpstr = pre[k].strip(" ").strip("'").strip('"')
+                            if tmpstr=='':continue
+                            l_labels.append(tmpstr)
+                        res.append(j)
+                        t.write(", ".join(l_labels))
+                        t.write("\n")
+                    batch = []
+    return res

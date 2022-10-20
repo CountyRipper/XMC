@@ -181,14 +181,17 @@ def single_pred(model,tokenizer,document_src):
 
 def batch_pred(model,tokenizer,documents)->List[List]:
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    #if documents==[]:return
     #ARTICLE_TO_SUMMARIZE = document_src
-    inputs = tokenizer(documents, return_tensors='pt', padding=True, truncation=True).to(device)#, padding=True
+    #加速，集中处理
+    inputs = tokenizer(documents, return_tensors='pt', padding=True, truncation=True).to(device)
+    #inputs = tokenizer(documents, return_tensors='pt', padding=True, truncation=True).to(device)#, padding=True
   # Generate Summary
-    summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length =64,num_beams = 7).to(device)  #length_penalty = 3.0  top_k = 5
-    pre_result=[]
-    pre_result.append(tokenizer.batch_decode(summary_ids,skip_special_tokens=True, clean_up_tokenization_spaces=True,pad_to_multiple_of=2))
+    summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length =64,num_beams = 7).to(device)
+    #summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length =64,num_beams = 7).to(device)  #length_penalty = 3.0  top_k = 5
+    pre_result=tokenizer.batch_decode(summary_ids,skip_special_tokens=True, clean_up_tokenization_spaces=True,pad_to_multiple_of=2)
     #pred = str([tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in summary_ids])  #[2:-2]
-    return str(pre_result[0])
+    return pre_result
             
 def xml_para(src_data,outputdata=None):
     tree = ET.parse(src_data)
@@ -207,16 +210,16 @@ def xml_para(src_data,outputdata=None):
                 w.write(i+"\n")        
     return res
 
-def bow_label_map(text_data,f_data,output=None):
-    # Read file with features and labels (old format from XMLRepo) 'train.txt'
-    features, tabels, num_samples, num_features, num_labels = data_utils.read_data(text_data)
-    # Read sparse file (see docstring for more) f_data='trn_X_Xf.txt'
-    # header can be set to false (if required)
-    mylabels = []
-    mylabels = data_utils.read_sparse_file(f_data, header=True)
+# def bow_label_map(text_data,f_data,output=None):
+#     # Read file with features and labels (old format from XMLRepo) 'train.txt'
+#     features, tabels, num_samples, num_features, num_labels = data_utils.read_data(text_data)
+#     # Read sparse file (see docstring for more) f_data='trn_X_Xf.txt'
+#     # header can be set to false (if required)
+#     mylabels = []
+#     mylabels = data_utils.read_sparse_file(f_data, header=True)
 
-# Write sparse file (with header)
-    data_utils.write_sparse_file(mylabels, output)
+# # Write sparse file (with header)
+#     data_utils.write_sparse_file(mylabels, output)
     
 def k_fold_split(dir,outputdir,k:int = 5):
     #输入数据文件，输出目标文件夹，输入包括train/test_finetune.json
@@ -352,7 +355,53 @@ def wiki500_change(json_dir,map_dir,js_output_dir,label_output_dir,texts_output_
             w.write(j['document'])
             w.write("\n")
     
-        
+def amazoncat_change(json_dir,map_dir,js_output_dir,label_output_dir,texts_output_dir):
+    #拿取text和标签index，然后用label_dir替换标签
+    logger.info("json_dir: "+json_dir)
+    logger.info("map_dir:"+map_dir)
+    logger.info("js_output_dir: "+js_output_dir)
+    logger.info("label_output:"+label_output_dir)
+    logger.info("texts_output_dir"+texts_output_dir)
+    doc=[]
+    label_map = []
+    map_f = open(map_dir,'r+',encoding='ISO-8859-1')
+    for row in tqdm(map_f):
+        label_map.append(row.strip('\n'))
+    map_f.close()
+    # with open(map_dir,'r+', encoding='ISO-8859-15') as map_f:
+    #     for row in map_f:
+    #         label_map.append(str(row).split("\n"))
+
+    with open(json_dir,'r+') as j_file:
+        for i in tqdm(j_file):
+            js_dic={}
+            js_f = json.loads(i)
+            #仅取content和target_ind
+            js_dic['document'] = 'title: '+js_f['title'].strip('\n')+", "+"content: "+js_f['content']
+            js_dic['target_ind'] = js_f['target_ind']
+            doc.append(js_dic)
+    label_set=[]
+    for i in range(len(doc)):
+        label_list = []
+        for j in doc[i]['target_ind']:
+            label_list.append(label_map[j])
+        label_set.append(label_list)
+        doc[i]['summary']= str(label_list)
+        #del doc[i]['target_ind']       
+    with open(js_output_dir,'w+') as w:
+        for j in tqdm(doc):
+            json.dump(j,w)
+            w.write("\n")
+    with open(label_output_dir,'w+') as w:
+        for j in tqdm(label_set):
+            sign = ", "
+            w.write(sign.join(j))
+            w.write("\n")
+    with open(texts_output_dir,'w+') as w:
+        for j in tqdm(doc):
+            w.write(j['document'])
+            w.write("\n")
+           
                 
         
         

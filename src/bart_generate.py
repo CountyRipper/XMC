@@ -2,7 +2,8 @@ from sre_parse import Tokenizer
 from typing import List
 from transformers import BartTokenizer, BartForConditionalGeneration
 import json
-from premethod import single_pred
+from detector import log
+from premethod import batch_pred, single_pred
 from tqdm import tqdm
 device = 'cuda'#'cpu
 
@@ -61,4 +62,54 @@ def get_pred_bart(dir,output_dir,src_dataname,model_path):
                 t.write(res[i])
                 t.write('\n')
     return res
-    
+
+@log
+def get_pred_bart_batch(dir,output_dir,src_dataname,model_path):
+    '''
+    加载配置
+    dir是当前数据库文件夹位置
+    outputdir是输出预测文件位置： dir+generate_result
+    srcdata是用于预测的原始文件doc的位置 dir+
+    '''
+    output_dir = dir+output_dir
+    print('output: '+output_dir)
+    src_dataname = dir+src_dataname
+    print('src_data: '+src_dataname)
+    model_path = dir+model_path
+    print("model_path: "+model_path)
+    model = BartForConditionalGeneration.from_pretrained(model_path).to(device)
+    tokenizer = BartTokenizer.from_pretrained(model_path)
+    tokenizer.save_pretrained(dir+"bart_tokenizer")
+    tokenizer.save_vocabulary(dir+"bart_tokenizer")
+    tokenizer.get_added_vocab()
+    data = []
+    dic = [] # dictionary for save each model generate result
+    src_value = [] # using for get source document which is used to feed into model, and get predicting result
+    res = []
+    batch=[]
+    # open test file 
+    with open(src_dataname, 'r+') as f:
+        for line in f:
+            data.append(json.loads(line))
+        # 进度条可视化 vision process
+        f=open(output_dir,'w+')
+        f.close()
+        with open(output_dir,'a+') as t:
+            for i in tqdm(range(len(data))): #range(len(data))
+                if i==0 or i%5!=0:
+                #填充 batch
+                    batch.append(data[i]['document'])
+                else:
+                    tmp_result = batch_pred(model,tokenizer,batch)
+                    for j in tmp_result:
+                        l_labels = [] #l_label 是str转 label的集合
+                        pre = j.strip('[]').strip().split(",")
+                        for k in range(len(pre)):
+                            tmpstr = pre[k].strip(" ").strip("'").strip('"')
+                            if tmpstr=='':continue
+                            l_labels.append(tmpstr)
+                        res.append(j)
+                        t.write(", ".join(l_labels))
+                        t.write("\n")
+                    batch = []
+    return res 
