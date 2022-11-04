@@ -115,8 +115,8 @@ def rank_train_BI(dir,text_data,train_pred_data,train_label_data,model_save_dir)
         for each in pred_label_list[i]:
             label_len_list = len(label_list[i])
             if each in label_list[i]:
-                #label_score = 0.5+0.5 *(label_len_list - label_list[i].index(each))/label_len_list
-                label_score = 1.0
+                label_score = 0.5+0.5 *(label_len_list - label_list[i].index(each))/label_len_list
+                #label_score = 1.0
                 fine_tune_list.append(InputExample(texts=[raw_text_list[i].rstrip(), each], label=label_score))
                 label_score_list.append(str(i) + ' ' + each+ ' ' +str(label_score))
             else:
@@ -130,7 +130,7 @@ def rank_train_BI(dir,text_data,train_pred_data,train_label_data,model_save_dir)
     #print('file complete')
     num_epoch = 5
     model = SentenceTransformer('all-MiniLM-L6-v2')
-    train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=24)
+    train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=128)
     train_loss = losses.CosineSimilarityLoss(model)
     shuffle=True
     #print("batch_size="+ "24")

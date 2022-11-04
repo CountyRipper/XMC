@@ -9,7 +9,7 @@ from nltk.stem.porter import *
 from nltk.stem.snowball import SnowballStemmer
 import torch
 import xml.etree.ElementTree as ET
-
+from torch.utils.data import Dataset
 from detector import log
 #from xclib.data import data_utils  
 nltk.download('stopwords')
@@ -36,6 +36,19 @@ def get_all_labels(data_name,outputname=None)-> List[str]:
         for row in label_set:
             for j in row.split(', '):
                 res.write(j+"\n")
+@log                
+def get_all_labels_allfile(datas,outputname=None)-> List[str]:
+    #获取多个文件的所有labels，并且去重
+    label_set=set()
+    for i in datas:
+        with open(i,'r+') as f:
+            for row in f:
+                for each in row.strip('\n').split(", "):
+                    label_set.add(each)
+    with open(outputname,'w+') as w:
+        for j in list(label_set):
+            w.write(j+"\n")
+        
     #return label_set
 #replace sapce of each labels  to _
 #inpput template: franc, beef, intervent stock, aid to disadvantag group, communiti aid,
@@ -109,7 +122,29 @@ def txt_to_json(text_name,label_name,outputname=None):
                         print(str(all_label_data[i]))
                     json.dump(pair,w)
                     w.write("\n")
-        
+'''
+将json转化为对应的text和label的文件
+'''
+def json_to_text(file_name):
+    json_file = file_name+"_finetune.json"
+    text_name = file_name+"_texts.txt"
+    label_name = file_name+"_labels.txt"
+    text = []
+    label = []
+    js=[]
+    with open(json_file,'r+') as f:
+        for row in f:
+            js.append(json.loads(row))
+        for i in js:
+            text.append(i['document'])
+            label.append(i['summary'])
+        with open(text_name,'w+')as w:
+            for j in text:
+                w.write(str(j)+'\n')
+        with open(label_name,'w+') as w:
+            for j in label:
+                w.write(", ".join(eval(j))+'\n')
+                
 '''
 get all label_stem
 获取全部词干化的单词

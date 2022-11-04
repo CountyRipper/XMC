@@ -73,7 +73,7 @@ def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, 
   if freeze_encoder:
     for param in model.model.encoder.parameters():
       param.requires_grad = False
-  batch_size = 1
+  batch_size = 2
   if val_dataset is not None:
     training_args = Seq2SeqTrainingArguments(
       output_dir=output_dir,           # output directory
@@ -121,7 +121,7 @@ def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, 
 
   return trainer
 @log
-def Pegasus_fine_tune(dir,train_dir,valid_dir,model_save,model_check):
+def Pegasus_fine_tune(dir,train_dir,valid_dir,model_save,model_check,model_name='google/pegasus-large'):
     #dir = './dataset/EUR-Lex/'
     model_save = dir+model_save
     model_check = dir+model_check
@@ -140,7 +140,7 @@ def Pegasus_fine_tune(dir,train_dir,valid_dir,model_save,model_check):
     train_texts, train_labels = [prefix + each for each in dataset['train']['document']], dataset['train']['summary']
     valid_texts, valid_labels = [prefix + each for each in dataset['valid']['document']], dataset['valid']['summary']
     # use Pegasus Large model as base for fine-tuning
-    model_name = 'google/pegasus-xsum'
+    #model_name = 'google/pegasus-large'
     #return train_dataset, val_dataset, test_dataset, tokenizer 可以一起投入
     train_dataset, _, _, tokenizer = prepare_data(model_name, train_texts, train_labels)
     valid_dataset, _, _, _ = prepare_data(model_name, valid_texts, valid_labels)

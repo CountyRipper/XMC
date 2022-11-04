@@ -4,6 +4,7 @@ from premethod import batch_pred
 # import torch
 # import ast
 from tqdm import tqdm
+from torch.utils.data import DataLoader
 device = 'cuda'#'cpu
 def pegasus_pred(model,tokenizer,model_path,src):
     
@@ -128,25 +129,24 @@ def get_pred_Pegasus_fast(dir,output_dir,src_dataname,model_path):
     with open(src_dataname, 'r+') as f:
         for line in f:
             data.append(json.loads(line))
+        dataloader = DataLoader(data,batch_size=8)
         # 进度条可视化 vision process
         f=open(output_dir,'w+')
         f.close()
         with open(output_dir,'a+') as t:
-            for i in tqdm(range(len(data))): #range(len(data))
-                if i==0 and i%10!=0:
-                #填充 batch
-                    batch.append(data[i]['document'])
-                else:
-                    tmp_result = batch_pred(model,tokenizer,batch)
-                    for j in tmp_result:
-                        l_labels = [] #l_label 是str转 label的集合
-                        pre = j.strip('[]').strip().split(",")
-                        for k in range(len(pre)):
-                            tmpstr = pre[k].strip(" ").strip("'").strip('"')
-                            if tmpstr=='':continue
-                            l_labels.append(tmpstr)
-                        res.append(j)
-                        t.write(", ".join(l_labels))
-                        t.write("\n")
-                    batch = []
+           for i in tqdm(dataloader): #range(len(data))
+                batch = i
+                tmp_result = batch_pred(model,tokenizer,batch)
+                for j in tmp_result:
+                    l_labels = [] #l_label 是str转 label的集合
+                    pre = j.strip('[]').strip().split(",")
+                    for k in range(len(pre)):
+                        tmpstr = pre[k].strip(" ").strip("'").strip('"')
+                        if tmpstr=='':continue
+                        l_labels.append(tmpstr)
+                    res.append(l_labels)
+                    t.write(", ".join(l_labels))
+                    t.write("\n")
+            #for i in res:
+                #t.write(res)
     return res

@@ -59,39 +59,31 @@ def get_pred_Keybart(dir,output_dir,src_dataname,model_path):
         for line in f:
             data.append(json.loads(line))
         # 进度条可视化 vision process
-        for i in tqdm(range(len(data))): #range(len(data))
-            dic = data[i]
-            src_value = dic["document"]
-            tmp_result = keybart_pred(model,tokenizer,src_value)
-            #print(tmp_result)
-            # pre_labels = tmp_result.strip('"').strip("[]").split(",")
-            # l = list(map( lambda x: x.strip().strip("'"),pre_labels))
-            # dic["pred"] = lg
-            # sign= ", "
-            # res.append(sign.join(l))
-            # if i%1000==0:
-            #     print(res[i])
-            dic["pred"] = tmp_result.replace ('\\','')
-            res_labels=[]
-            pre_result=dic["pred"].strip("'").strip("[]").strip('\"').strip("[]").strip("\\").strip("'").split(",")
-            for j in range(len(pre_result)):
-                tmpstr = pre_result[j].strip(" ").strip("'")
-                if tmpstr=='':
-                    continue
-                res_labels.append(tmpstr)
-            # if output_dir:
-            #     with open(output_dir,'a+') as t:
-            #         #json.dump(dic,t)
-            #         t.write(res[i])
-            #         t.write('\n')
-            sign= ", "
-            res.append(sign.join(res_labels))
-            if i%1000==0:
-                print(res[i])
-            with open(output_dir,'a+') as t:
-                #json.dump(dic,t)
-                t.write(res[i])
-                t.write('\n')
+        f=open(output_dir,'w+')
+        f.close()
+        with open(output_dir,'a+') as t:
+            for i in tqdm(range(len(data))): #range(len(data))
+                if (i==0 or i%7!=0) and i<len(data)-1:
+                #填充 batch
+                    batch.append(data[i]['document'])
+                
+                else:
+                    batch.append(data[i]['document'])
+                    tmp_result = batch_pred(model,tokenizer,batch)
+                    for j in tmp_result:
+                        l_labels = [] #l_label 是str转 label的集合
+                        pre = j.strip('[]').strip().split(",")
+                        for k in range(len(pre)):
+                            tmpstr = pre[k].strip(" ").strip("'").strip('"')
+                            if tmpstr=='':continue
+                            l_labels.append(tmpstr)
+                        res.append(", ".join(l_labels)+"\n")
+                        #t.write(", ".join(l_labels))
+                        #t.write("\n")
+                    batch = []
+            for i in res:
+                t.write(res)
+    return res
 
 def zero_shot_keybart_generation(dir,output_dir,src_dataname) ->List[str]:
     output_dir = dir+output_dir

@@ -41,7 +41,7 @@ def fine_tune_keybart(dir,train_dir,valid_dir,save_dir,checkdir,freeze_encoder=N
     if freeze_encoder:
         for param in model.model.encoder.parameters():
             param.requires_grad = False
-    batch_size=2
+    batch_size=4
     train_args = Seq2SeqTrainingArguments(
         output_dir=checkdir,
         num_train_epochs=5,           # total number of training epochs
