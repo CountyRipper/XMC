@@ -87,9 +87,14 @@ def rank_bi(dir,text_dir,pred_combine_dir,model_dir,outputdir=None)-> List[List[
         #ranked_list=[]
         src_text = text_list[i]
         cur_label_set = pred_label_list[i]
-        for each_label in cur_label_set:
-            score = model.predict([src_text,each_label])
-            score_list.append((each_label,score))
+        #获取文本和不同标签的embedding
+        text_embedding = model.encode(src_text,convert_to_tensor=True)
+        label_embedding = model.encode(cur_label_set,convert_to_tensor=True)
+        cosine_scores = util.cos_sim(text_embedding, label_embedding)
+        #获取之后计算得分
+        #cosine_scores应该是一个数组，对应每个标签的优先级
+        for ind,each_score in enumerate(cosine_scores[0].tolist()):
+            score_list.append([cur_label_set[ind],each_score])
         if i%1000==0:
             print(score_list)
         score_list.sort(key= lambda x:x[1],reverse=True) #按照分数排序

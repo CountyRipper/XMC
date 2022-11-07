@@ -30,6 +30,7 @@ class PegasusDataset(torch.utils.data.Dataset):
         self.labels = labels
     def __getitem__(self, idx):
         item = {key: torch.tensor(val[idx]) for key, val in self.encoding.items()}
+        #key和val是self.encoding.items()遍历中的键和值
         item['labels'] = torch.tensor(self.labels['input_ids'][idx])  # torch.tensor(self.labels[idx])
         return item
     def __len__(self):

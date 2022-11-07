@@ -128,8 +128,8 @@ def get_pred_Pegasus_fast(dir,output_dir,src_dataname,model_path):
     # open test file 
     with open(src_dataname, 'r+') as f:
         for line in f:
-            data.append(json.loads(line))
-        dataloader = DataLoader(data,batch_size=8)
+            data.append(json.loads(line)['document'])
+        dataloader = DataLoader(data,batch_size=12)
         # 进度条可视化 vision process
         f=open(output_dir,'w+')
         f.close()

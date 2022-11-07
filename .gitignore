@@ -140,3 +140,4 @@ test.py
 *_save
 *.vscode
 models
+run*
