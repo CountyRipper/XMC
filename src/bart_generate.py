@@ -2,7 +2,7 @@
 from typing import List
 from transformers import BartTokenizer, BartForConditionalGeneration
 import json
-from detector import log
+from utils.detector import log
 from premethod import batch_pred, single_pred
 from tqdm import tqdm
 from torch.utils.data import DataLoader

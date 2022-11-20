@@ -10,7 +10,7 @@ from nltk.stem.snowball import SnowballStemmer
 import torch
 import xml.etree.ElementTree as ET
 from torch.utils.data import Dataset
-from detector import log
+from utils.detector import log
 #from xclib.data import data_utils  
 nltk.download('stopwords')
 #stemmer = SnowballStemmer("english")
@@ -438,7 +438,21 @@ def amazoncat_change(json_dir,map_dir,js_output_dir,label_output_dir,texts_outpu
             w.write("\n")
            
                 
-        
+def clean_b(data_name):
+    #clea_row=[]
+    clean_set=[] #save clean_row
+    with open(data_name+".txt","r") as raw_text:
+        for row in raw_text:
+            row = row.strip("[").strip("]").strip("\"")
+            print(row)
+            #clea_row=row
+            clean_set.append(row)
+        with open(data_name+"_b"+".txt","w+") as clean_text:
+            for i in clean_set:
+                clean_text.write(i)
+            clean_text.write("\n")
+dataname="test_pegasus_combine_stem"
+clean_b(dataname)        
         
             
 

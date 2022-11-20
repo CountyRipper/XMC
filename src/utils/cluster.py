@@ -1,4 +1,3 @@
-
 from numpy import float32
 import torch
 from scipy.spatial.distance import cosine
@@ -6,7 +5,7 @@ from tqdm import tqdm
 from transformers import AutoModel, AutoTokenizer
 from sklearn.cluster import KMeans
 import numpy as np
-from detector import log
+from utils.detector import log
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 @log

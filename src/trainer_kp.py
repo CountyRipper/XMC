@@ -23,9 +23,10 @@ class modeltrainer(object):
         self.datadir = args.datadir
         self.modelname = args.modelname
         self.checkdir = self.datadir +args.checkdir
-        self.output = self.datadir + args.output
+        self.output = self.datadir + args.outputmodel
         self.batch_size = args.batch_size
         self.epoch = args.epoch
+        self.affix = args.affix
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         if self.modelname=='bart-large' or self.modelname=='BART-large' or self.modelname=='Bart-large':
             self.model = BartForConditionalGeneration.from_pretrained("facebook/bart-large",cache_dir='./models').to(self.device)
@@ -103,29 +104,44 @@ class modeltrainer(object):
         end =  datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print('tarin end:'+ end)
         print('tarining cost time:'+ str((time_stap2-time_stap1)/60/60 )+"hours.")
-        with open(self.datadir+"train_log.txt",'a+')as w: 
+        with open(os.path.join(self.datadir,"train_log.txt"),'a+')as w: 
             w.write("datadir:"+self.datadir+", "+"model_name: "+self.modelname+", "+"batch_size: "+self.batch_size+"epoch: "+self.epoch+"\n"
                     "checkdir: "+self.checkdir+", "+"output: "+self.output+"\n")
             w.write("starttime:"+start+". ")
             w.write("endtime: "+end+"\n")
     
     def __predict(self,model,tokenizer,documents):
-        inputs = self.tokenizer(documents, return_tensors='pt', padding=True, truncation=True).to(self.device)
+        inputs = tokenizer(documents, return_tensors='pt', padding=True, truncation=True).to(self.device)
         #inputs = tokenizer(documents, return_tensors='pt', padding=True, truncation=True).to(device)#, padding=True
       # Generate Summary
-        summary_ids = self.model.generate(inputs['input_ids'],max_length = 256,min_length =64,num_beams = 5).to(self.device)
+        summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length =64,num_beams = 5).to(self.device)
         #summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length =64,num_beams = 7).to(device)  #length_penalty = 3.0  top_k = 5
-        pre_result=self.tokenizer.batch_decode(summary_ids,skip_special_tokens=True, clean_up_tokenization_spaces=True,pad_to_multiple_of=2)
+        pre_result=tokenizer.batch_decode(summary_ids,skip_special_tokens=True, clean_up_tokenization_spaces=True,pad_to_multiple_of=2)
         #pred = str([tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in summary_ids])  #[2:-2]
         return pre_result   
     
-    def predicting(self,src_dataname,output_dir):
-        output_dir = self.datadir+output_dir
+    def predicting(self,modelname,src_dataname,output_dir=''):
+        modelname = os.path.join(output_dir,modelname)
+        print("modelname: ", modelname)
+        output_dir = os.path.join(self.datadir,'res',output_dir)
         print('output: '+output_dir)
-        src_dataname = self.datadir+src_dataname
+        src_dataname = os.path.join(self.datadir,src_dataname)
         print('src_data: '+src_dataname)
-        self.tokenizer.save_pretrained(self.modelname+"_tokenizer")
-        self.tokenizer.save_vocabulary(self.modelname+"_tokenizer")
+        #this tokenizer is not the self.tokenizer
+        if (self.affix=='ba'):
+            model = BartForConditionalGeneration.from_pretrained(modelname).to(self.device)
+            tokenizer = BartTokenizer.from_pretrained(modelname)
+        elif (self.affix=='pega'):
+            model = PegasusForConditionalGeneration.from_pretrained(modelname).to(self.device)
+            tokenizer = PegasusTokenizer.from_pretrained(modelname)
+        elif (self.affix=='t5'):
+            model = T5ForConditionalGeneration.from_pretrained(modelname).to(self.device)
+            tokenizer = T5Tokenizer.from_pretrained(modelname)
+        else :
+            tokenizer = AutoTokenizer.from_pretrained(modelname)
+            model = AutoModelForSeq2SeqLM.from_pretrained(modelname).to(self.device)
+        tokenizer=tokenizer.save_pretrained(modelname+"_tokenizer")
+        tokenizer =tokenizer.save_vocabulary(modelname+"_tokenizer")
         data = []
         dic = [] # dictionary for save each model generate result
         src_value = [] # using for get source document which is used to feed into model, and get predicting result
@@ -142,7 +158,7 @@ class modeltrainer(object):
             with open(output_dir,'a+') as t:
                 for i in tqdm(dataloader): #range(len(data))
                     batch = i
-                    tmp_result = self.__predict(self.model,self.tokenizer,batch)
+                    tmp_result = self.__predict(model,tokenizer,batch)
                     for j in tmp_result:
                         l_labels = [] #l_label 是str转 label的集合
                         pre = j.strip('[]').strip().split(",")

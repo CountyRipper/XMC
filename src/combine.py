@@ -3,7 +3,7 @@ from typing import List
 from sentence_transformers import CrossEncoder
 from sentence_transformers import SentenceTransformer, util
 
-from detector import log
+from utils.detector import log
 model_c = CrossEncoder('cross-encoder/stsb-roberta-base')
 model_b = SentenceTransformer('all-MiniLM-L6-v2')
 from tqdm import tqdm

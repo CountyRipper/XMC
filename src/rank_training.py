@@ -5,6 +5,7 @@
 # from nltk.stem.porter import *
 # from nltk.stem.snowball import SnowballStemmer
 # from nltk.tokenize import word_tokenize  
+import re
 from sentence_transformers import SentenceTransformer, InputExample, losses
 
 from sentence_transformers.cross_encoder import CrossEncoder
@@ -14,13 +15,13 @@ from sentence_transformers.cross_encoder.evaluation import CECorrelationEvaluato
 from sentence_transformers import InputExample
 from torch.utils.data import DataLoader
 
-from detector import log
+from utils.detector import log
 
 # nltk.download('stopwords')
 
 # stemmer = SnowballStemmer("english")
 # stemmer2 = SnowballStemmer("english", ignore_stopwords=True)
-def rank_train(dir,text_data,train_pred_data,train_label_data,model_save_dir):    
+def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_save_dir):    
     fine_tune_list = []
     raw_text_list = []
     label_list=[]
@@ -70,19 +71,43 @@ def rank_train(dir,text_data,train_pred_data,train_label_data,model_save_dir):
             fb.write("\n")    
     #print('file complete')
     num_epoch = 5
-    model = CrossEncoder('cross-encoder/stsb-roberta-base', num_labels=1)
-    train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=24)
-    # shuffle=True
-    print("batch_size="+ "24")
-    # Configure the training
-    warmup_steps = math.ceil(len(train_dataloader) * num_epoch * 0.1) #10% of train data for warm-up
-    #logger.info("Warmup-steps: {}".format(warmup_steps))
-    model.fit(train_dataloader=train_dataloader,
-              epochs=num_epoch,
-              warmup_steps=warmup_steps,
-              #用curr
-              output_path=model_save_dir)
-    model.save(model_save_dir)
+    # cross-encoder
+    if re.match('\w*cross-encoder\w*',model_name,re.I):
+        model = CrossEncoder(model, num_labels=1)
+        train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=128)
+        # shuffle=True
+        print("batch_size="+ "24")
+        # Configure the training
+        warmup_steps = math.ceil(len(train_dataloader) * num_epoch * 0.1) #10% of train data for warm-up
+        #logger.info("Warmup-steps: {}".format(warmup_steps))
+        model.fit(train_dataloader=train_dataloader,
+                  epochs=num_epoch,
+                  warmup_steps=warmup_steps,
+                  #用curr
+                  output_path=model_save_dir)
+        '''需要修改,保存check路径'''
+        model.save(model_save_dir)
+    #bi-encoder
+    else:
+        model = SentenceTransformer(model)
+        #model = SentenceTransformer('all-MiniLM-L6-v2')
+        train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=128)
+        train_loss = losses.CosineSimilarityLoss(model)
+        shuffle=True
+        #print("batch_size="+ "24")
+        # Configure the training
+        warmup_steps = math.ceil(len(train_dataloader) * num_epoch * 0.1) #10% of train data for warm-up
+    
+        #logger.info("Warmup-steps: {}".format(warmup_steps))
+        model.fit(train_objectives=[(train_dataloader, train_loss)],
+                epochs=num_epoch,
+                warmup_steps=warmup_steps,
+                #train_loss=train_loss,
+                #用curr
+                output_path=model_save_dir)
+        model.save(model_save_dir)
+        
+    
 #rank_train('./dataset/EUR-Lex/',"train_texts.txt","generate_result/train_pred.txt","train_labels.txt","cr_en")
 
 @log

@@ -17,7 +17,7 @@ pair = {}
 dataset_type = ["train", "test"]
 
 def for_finetune(dataset_name):
-    data_dir="./dataset/"
+    data_dir="../dataset/"
     finetuned_path = data_dir+dataset_name + "_finetune.json" #finetune_path is 
     # text是src，label是tgt 
     text_path = data_dir+dataset_name + "_texts.txt"

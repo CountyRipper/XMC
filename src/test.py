@@ -1,15 +1,20 @@
-from premethod import *
-from cluster import *
+#from premethod import *
+#from cluster import *
+import re
 datadir = ['./dataset/EUR-Lex/','./dataset/Wiki500K/','./dataset/AmazonCat-13K/','./dataset/AmazonCat-13K-10/']
 # k_fold = [1,2,3,4,5]
+s = 'Pegasus-large'
+if re.match("\w*pegasus\w*",s,re.I):
+    print(s)
+
 # labels =[]
 # embeddings = get_embedding(datadir[1],"all_labels.txt")
 # get_means(embeddings,datadir[1]+"all_label_cluster.txt")
 #split_jsonfile(datadir[2]+"test_finetune.json",datadir[3]+"test_finetune.json",10)
 #split_jsonfile(datadir[2]+"train_finetune.json",datadir[3]+"train_finetune.json",10)
-json_to_text(datadir[3]+"test")
-json_to_text(datadir[3]+"train")
-get_all_labels_allfile([datadir[3]+"test_labels.txt",datadir[3]+"train_labels.txt"],datadir[3]+"all_labels.txt")
+#json_to_text(datadir[3]+"test")
+#json_to_text(datadir[3]+"train")
+#get_all_labels_allfile([datadir[3]+"test_labels.txt",datadir[3]+"train_labels.txt"],datadir[3]+"all_labels.txt")
 # with open('./dataset/Wiki500K/Yf.txt','r+') as f:
 #     for row in f:
 #         labels.append(row.replace("Category:","").split("->")[0])

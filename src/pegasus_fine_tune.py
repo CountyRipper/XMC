@@ -21,7 +21,7 @@ import torch
 #import nltk
 import numpy as np
 
-from detector import log
+from utils.detector import log
 
 
 class PegasusDataset(torch.utils.data.Dataset):
