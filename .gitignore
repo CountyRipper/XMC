@@ -141,3 +141,4 @@ test.py
 *.vscode
 models
 run*
+.vscode

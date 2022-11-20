@@ -58,9 +58,5 @@ def get_means(embedding_list:torch.tensor,output=None):
         with open(output,'w+') as w:
             for i in res:
                 w.write(str(i)+"\n")
-        
-    
-    
-
     # Get the embeddings
     
