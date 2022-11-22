@@ -1,4 +1,4 @@
-from transformers import PegasusForConditionalGeneration, PegasusTokenizer
+from transformers import PegasusForConditionalGeneration, PegasusTokenizerFast
 import json
 from premethod import batch_pred
 # import torch
@@ -46,7 +46,7 @@ def get_pred_Pegasus(dir,output_dir,src_dataname,model_path):
     # model save dir
     #dir = './dataset/EUR-Lex/ dataset dir
     model = PegasusForConditionalGeneration.from_pretrained(model_path).to(device)#BART-large-Finetuned
-    tokenizer = PegasusTokenizer.from_pretrained(model_path)
+    tokenizer = PegasusTokenizerFast.from_pretrained(model_path)
 
     tokenizer.save_pretrained(dir+"pegasus_tokenizer")
     tokenizer.save_vocabulary(dir+"pegasus_tokenizer")
@@ -112,7 +112,7 @@ def get_pred_Pegasus_fast(dir,output_dir,src_dataname,model_path):
     # model save dir
     #dir = './dataset/EUR-Lex/ dataset dir
     model = PegasusForConditionalGeneration.from_pretrained(model_path).to(device)#BART-large-Finetuned
-    tokenizer = PegasusTokenizer.from_pretrained(model_path)
+    tokenizer = PegasusTokenizerFast.from_pretrained(model_path)
     print('this is the check'+'\n'+'******************************************'+"\n")
     tokenizer.save_pretrained(dir+"pegasus_tokenizer")
     tokenizer.save_vocabulary(dir+"pegasus_tokenizer")
@@ -129,7 +129,7 @@ def get_pred_Pegasus_fast(dir,output_dir,src_dataname,model_path):
     with open(src_dataname, 'r+') as f:
         for line in f:
             data.append(json.loads(line)['document'])
-        dataloader = DataLoader(data,batch_size=12)
+        dataloader = DataLoader(data,batch_size=16)
         # 进度条可视化 vision process
         f=open(output_dir,'w+')
         f.close()

@@ -18,6 +18,17 @@ class MyData(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.labels['input_ids'])  # len(self.labels)
 
+class CustomTrainer(Seq2SeqTrainer):
+    def compute_loss(self, model, inputs, return_outputs=False):
+        labels = inputs.get("labels")
+        # forward pass
+        outputs = model(**inputs)
+        logits = outputs.get("logits")
+        # compute custom loss (suppose one has 3 labels with different weights)
+        loss_fct = torch.nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 3.0]))
+        loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+        return (loss, outputs) if return_outputs else loss
+
 class modeltrainer(object):
     def __init__(self,args) -> None:
         self.datadir = args.datadir
@@ -27,6 +38,7 @@ class modeltrainer(object):
         self.batch_size = args.batch_size
         self.epoch = args.epoch
         self.affix = args.affix
+        self.top_k=args.top_k
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         if self.modelname=='bart-large' or self.modelname=='BART-large' or self.modelname=='Bart-large':
             self.model = BartForConditionalGeneration.from_pretrained("facebook/bart-large",cache_dir='./models').to(self.device)
@@ -114,7 +126,7 @@ class modeltrainer(object):
         inputs = tokenizer(documents, return_tensors='pt', padding=True, truncation=True).to(self.device)
         #inputs = tokenizer(documents, return_tensors='pt', padding=True, truncation=True).to(device)#, padding=True
       # Generate Summary
-        summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length =64,num_beams = 5).to(self.device)
+        summary_ids = model.generate(inputs['input_ids'],max_length = 256,top_k=self.top_k,num_beams = 5).to(self.device)
         #summary_ids = model.generate(inputs['input_ids'],max_length = 256,min_length =64,num_beams = 7).to(device)  #length_penalty = 3.0  top_k = 5
         pre_result=tokenizer.batch_decode(summary_ids,skip_special_tokens=True, clean_up_tokenization_spaces=True,pad_to_multiple_of=2)
         #pred = str([tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in summary_ids])  #[2:-2]

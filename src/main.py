@@ -38,94 +38,57 @@ def run(args:ArgumentParser):
     if args.is_pred_tst:
         trainer.predicting(args.outputmodel,args.test_texts,"test_pred"+"_"+affix+".txt")
     if args.iscombine:
-        if os.path.exists(os.path.join(args.datadir,"train_pred"+"_"+affix+".txt")):
-            get_combine_list(args.datadir,"train_pred"+"_"+affix+".txt",args.all_labels,"train_combine_"+affix+".txt") #train_pred_fix.txt
-        if os.path.exists(os.path.join(args.datadir,"test_pred"+"_"+affix+".txt")):
-            get_combine_list(args.datadir,"test_pred"+"_"+affix+".txt",args.all_labels,"test_combine_"+affix+".txt") #test_pred_fix.txt
-    
+        if args.combine_model=='cross-encoder':
+            if os.path.exists(os.path.join(args.datadir,"train_pred"+"_"+affix+".txt")):
+                get_combine_list(args.datadir,"train_pred"+"_"+affix+".txt",
+                                 args.all_labels,"train_combine_"+affix+".txt") #train_pred_fix.txt
+            if os.path.exists(os.path.join(args.datadir,"test_pred"+"_"+affix+".txt")):
+                get_combine_list(args.datadir,"test_pred"+"_"+affix+".txt",
+                                 args.all_labels,"test_combine_"+affix+".txt") #test_pred_fix.txt
+        else:
+            if os.path.exists(os.path.join(args.datadir,"train_pred"+"_"+affix+".txt")):
+                get_combine_bi_list(args.datadir,"train_pred"+"_"+affix+".txt",
+                                    args.all_labels,"train_combine_"+affix+".txt") #train_pred_fix.txt
+            if os.path.exists(os.path.join(args.datadir,"test_pred"+"_"+affix+".txt")):
+                get_combine_bi_list(args.datadir,"test_pred"+"_"+affix+".txt",
+                                    args.all_labels,"test_combine_"+affix+".txt") #test_pred_fix.txt
     args.is_rank_train=True
     args.rank_model = "all-MiniLM-L6-v2"
-    
-        
+    if re.match("\w*cross-encoder\w*",args.rank_model,re.I):
+        affix1 = 'cr'
+    else: affix1 = 'bi' 
     if args.is_rank_train:
         rank_train(args.datadir,args.rank_model,args.train_texts,"train_combine_"+affix+".txt",args.train_labels,args.rankmodel_save)
     if args.is_ranking :
-        if re.match("\w*cross-encoder\w*",args.rank_model,re.I):
-            rank(args.datadir,args.test_texts,"test_combine_"+affix+".txt",args.model_save,"test_ranked_"+affix+".txt")
-    
-    p_at_k(args.datadir,args.test_labels,"test_ranked_"+affix+".txt")    
+        if affix1 =='cr':
+            rank(args.datadir,args.test_texts,"test_combine_"+affix+".txt",args.model_save,"test_ranked_"+affix+affix1+".txt")
+        else:
+            rank_bi(args.datadir,args.test_texts,"test_combine_"+affix+".txt",args.model_save,"test_ranked_"+affix+affix1+".txt")
+    p_at_k(args.datadir,args.test_labels,"test_ranked_"+affix+affix1+".txt")    
     
         
 
 
 if __name__ == '__main__':
-    parser = ArgumentParser()
-    parser.add_argument('--all_labels',type=str,default='all_labels.txt')
-    parser.add_argument('--test_labels',type=str,default='test_labels.txt')
-    parser.add_argument('--train_labels',type=str,default="train_labels.txt")
-    parser.add_argument('--test_texts',type=str,default="test_texts.txt")
-    parser.add_argument('--train_texts',type=str,default="train_texts.txt")
-    # finetune args
-    parser.add_argument('--istrain',type=bool,default=True,
-                        help="whether run finteune processing")
-    parser.add_argument('-b', '--batch_size', type=int, default=4,
-                        help='number of batch size for training')
-    parser.add_argument('-e', '--epoch', type=int, default=5,
-                        help='number of epochs to train (default: 100)')
-    parser.add_argument('--modelname', type=str,default='pegasus',
-                        help='modelname ')
-    parser.add_argument('--datadir', type=str, default='./dataset/EUR-Lex/',
-                        help='dataset_dir')
-    parser.add_argument('--checkdir', type=str, default='pegasus_check',
-                        help='path to trained model to save')
-    parser.add_argument('--outputmodel',type=str,default='pegasus_save',
-                        help="fine-tune model save dir")
-    parser.add_argument('--lr', type=float, default=2e-5,
-                        help='learning rate')
-    parser.add_argument('--seed', type=int, default=44,
-                        help='random seed (default: 1)')
-    #perdicting args
-    parser.add_argument('--is_pred_trn',type=bool,default=True,
-                        help="Whether run predicting training dataset")
-    parser.add_argument('--is_pred_tst',type=bool,default=True,
-                        help="Whether run predicting testing dataset")
-
-    #combine part
-    parser.add_argument('--iscombine',type=bool,default=True,
-                        help="Whether run combine")
-    parser.add_argument('--combine_model',type=str,default='cross-encoder')
-
-    parser.add_argument('--combine_testdir',type=str,default="test_pred.txt")
-    parser.add_argument('--combine_traindir',type=str,default="train_pred.txt")
-    parser.add_argument('--combine_testout',type=str,default="test_combine_labels.txt")
-    parser.add_argument('--combine_trainout',type=str,default="train_combine_labels.txt")
-    #rank part
-    parser.add_argument('--is_rank_train',type=bool,default=True)
-    parser.add_argument('--rank_model',type=str,default='cross-encoder/stsb-roberta-base')
-    parser.add_argument('--rankmodel_save',type=str,default='cr_en')
-    parser.add_argument('--rank_textdir',type=str,default='train_texts.txt')
-    parser.add_argument('--is_ranking',type=bool,default=True)
-    args = parser.parse_args()
-    run(args)
     
     # 注意文件路径
     datadir = ['./dataset/EUR-Lex/','./dataset/Wiki500K/','./dataset/AmazonCat-13K/','./dataset/AmazonCat-13K-10/','./dataset/Wiki500K-20/']
     k_fold = [0,1,2,3,4]
     tasks = ['test','train','valid']
-    models = {'pega':0,'bart':1,'kb':0}
+    models = {'pega':1,'bart':0,'kb':0}
     #datapreprocess(datadir[0])        
-    gener = "generate_result/"
+    gener = "res/"
     da =  1    
     if models['pega']:
         #fine_tune_pegasus_light(datadir[da],tasks[1]+'_finetune.json',tasks[1]+'_finetune.json',"pegasus_save_b","pegasus_check_b","google/bigbird-pegasus-large-bigpatent")
         #Pegasus_fine_tune(datadir[da],tasks[1]+'_finetune.json',tasks[1]+'_finetune.json',"pegasus_save","pegasus_check")
-        for i in range(0):
-            get_pred_Pegasus_fast(datadir[da],gener+tasks[i]+"_pred.txt",tasks[i]+"_finetune.json","pegasus_save_b")
+        for i in range(1):
+            get_pred_Pegasus_fast(datadir[da],gener+tasks[i]+"_pred.txt",tasks[i]+"_finetune.json","pegasus_save")
             get_combine_bi_list(datadir[da],gener+tasks[i]+"_pred.txt","all_labels.txt",gener+tasks[i]+"_combine_labels_bi.txt")
-        rank_train_BI(datadir[da],tasks[1]+"_texts.txt",gener+tasks[1]+"_combine_labels_bi.txt",tasks[1]+"_labels.txt","bi_en")
-        rank_bi(datadir[da],tasks[0]+"_texts.txt",gener+tasks[0]+"_combine_labels_bi.txt","bi_en",gener+tasks[0]+"_ranked_labels_bi.txt")
+        #rank_train_BI(datadir[da],tasks[1]+"_texts.txt",gener+tasks[1]+"_combine_labels_bi.txt",tasks[1]+"_labels.txt","bi_en")
+        rank(datadir[da],tasks[0]+"_texts.txt",gener+tasks[0]+"_combine_labels_bi.txt","cr_en",gener+tasks[0]+"_ranked_labels.txt")
         res = p_at_k(datadir[da],tasks[0]+"_labels.txt",gener+tasks[0]+"_combine_labels_bi.txt",datadir[da]+"res_pega.txt")
-        res = p_at_k(datadir[da],tasks[0]+"_labels.txt",gener+tasks[0]+"_ranked_labels_bi.txt",datadir[da]+"res_pega.txt")
+        res = p_at_k(datadir[da],tasks[0]+"_labels.txt",gener+tasks[0]+"_ranked_labels.txt",datadir[da]+"res_pega.txt")
     if models['bart']:
         #fine_tune_bart(datadir[da],tasks[1]+'_finetune.json',tasks[0]+'_finetune.json','bart_save','bart_check')
         for i in range(2):

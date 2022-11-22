@@ -56,12 +56,22 @@ def fine_tune_bart(dir,train_dir,valid_dir,save_dir,checkdir,freeze_encoder=None
         args=train_args,                  # training arguments, defined above
         train_dataset=train_dataset,         # training dataset
         eval_dataset=valid_dataset,            # evaluation dataset
-        tokenizer=tokenizer
+        tokenizer=tokenizer,
     )
     print("training begin:")
     trainer.train()
     trainer.save_model(output_dir=save_dir)
     print("training compelete, output:"+save_dir)
     
+class CustomTrainer(Seq2SeqTrainer):
+    def compute_loss(self, model, inputs, return_outputs=False):
+        labels = inputs.get("labels")
+        # forward pass
+        outputs = model(**inputs)
+        logits = outputs.get("logits")
+        # compute custom loss (suppose one has 3 labels with different weights)
+        loss_fct = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 3.0]))
+        loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+        return (loss, outputs) if return_outputs else loss
     
     

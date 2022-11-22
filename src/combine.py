@@ -1,3 +1,4 @@
+import os
 from traceback import print_tb
 from typing import List
 from sentence_transformers import CrossEncoder
@@ -15,13 +16,17 @@ def get_combine_list(data_dir,pred_data,reference_data,outputdir=None)-> List[Li
     pred_list=[]
     all_label_list=[]
     combine_list=[]
+    pred_data = os.path.join(data_dir,'res',pred_data)
+    reference_data = os.path.join(data_dir,reference_data)
+    print('pred_data: '+pred_data)
+    print('reference:'+reference_data)
     #no_in_count=[]
     #全是已经词干化的label集合
     #对应test_pregasus_pred.txt, all_stemlabels.txt
-    with open(data_dir+pred_data,'r+') as f1:
+    with open(pred_data,'r+') as f1:
         for i in f1:
             pred_list.append(i.rstrip().rstrip(',').split(", "))
-    with open(data_dir+reference_data,'r+') as f2:
+    with open(reference_data,'r+') as f2:
         for i in f2:
             all_label_list.append(i.rstrip())
     for i in tqdm(range(len(pred_list))):
@@ -66,11 +71,11 @@ def get_combine_list(data_dir,pred_data,reference_data,outputdir=None)-> List[Li
 
 @log
 def get_combine_bi_list(data_dir,pred_data,reference_data,outputdir=None)-> List[List[str]]:
-    pred_data = data_dir+pred_data
-    reference_data = data_dir+reference_data
-    outputdir=data_dir+outputdir
+    pred_data = os.path.join(data_dir,'res',pred_data)
+    reference_data = os.path.join(data_dir,reference_data)
     print('pred_data: '+pred_data)
-    print('reference_data:'+reference_data)
+    print('reference:'+reference_data)
+    outputdir=os.path.join(data_dir,outputdir)
     print('data_dir: '+data_dir)
     print('write into: '+outputdir)
     pred_list=[]
@@ -98,9 +103,13 @@ def get_combine_bi_list(data_dir,pred_data,reference_data,outputdir=None)-> List
         t_list = list(map(lambda x: x['label'], no_equal_list))
         embeddings_pre = model_b.encode(t_list, convert_to_tensor=True)
         cosine_score = util.cos_sim(embeddings_pre,embeddings_all)
+        #cosine_score是一个len(no_equal_list)行，(all_label_list)列的一个矩阵
         #cosine_score的长度一定等于no_equal_list
         for j in range(len(cosine_score)):
             max_ind = cosine_score[j].argmax(0)
+            while all_label_list[max_ind] in pred_list: #if prelist has this candidate label
+                del cosine_score[j][max_ind]
+                max_ind = cosine_score[j].argmax(0)
             no_equal_list[j]['label'] =  all_label_list[max_ind]
         for j in no_equal_list:
             pred_list[i][j['ind']] = j['label']
