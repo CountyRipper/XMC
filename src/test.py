@@ -1,11 +1,24 @@
 #from premethod import *
 #from cluster import *
 import re
-datadir = ['./dataset/EUR-Lex/','./dataset/Wiki500K/','./dataset/AmazonCat-13K/','./dataset/AmazonCat-13K-10/']
+from premethod import label_index_to_label_raw,txt_to_json
+from tqdm import tqdm
+datadir = ['./dataset/EUR-Lex/','../dataset/Wiki500K/','./dataset/AmazonCat-13K/','./dataset/AmazonCat-13K-10/','./dataset/Wiki10-31K/']
 # k_fold = [1,2,3,4,5]
-s = 'Pegasus-large'
-if re.match("\w*pegasus\w*",s,re.I):
-    print(s)
+
+#label_index_to_label_raw(datadir[4]+'test_labels_ind.txt',datadir[4]+'all_labels.txt',datadir[4]+'test_labels.txt')
+#label_index_to_label_raw(datadir[4]+'train_labels_ind.txt',datadir[4]+'all_labels.txt',datadir[4]+'train_labels.txt')
+# txt_to_json(datadir[4]+'test_texts',datadir[4]+'test_labels',datadir[4]+'test_finetune')
+# txt_to_json(datadir[4]+'train_texts',datadir[4]+'train_labels',datadir[4]+'train_finetune')
+label_list = []
+with open(datadir[1]+'all_labels.txt','r') as r:
+    for i in tqdm(r):
+        label_list.append(i.rstrip('\n'))
+label_list = list(map(lambda x: x.replace('_',' '),label_list))
+with open(datadir[1]+'all_labels1.txt','w+') as w:
+    for i in tqdm(label_list):
+        w.write(i+'\n')
+
 
 # labels =[]
 # embeddings = get_embedding(datadir[1],"all_labels.txt")

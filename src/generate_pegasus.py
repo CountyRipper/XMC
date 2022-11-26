@@ -102,7 +102,7 @@ def get_pred_Pegasus(dir,output_dir,src_dataname,model_path):
         #f.close()
         #t.close()
 #get_pred_Pegasus("generate_result","test_finetune.json","pegasus_test_save")
-def get_pred_Pegasus_fast(dir,output_dir,src_dataname,model_path):
+def get_pred_Pegasus_fast1(dir,output_dir,src_dataname,model_path):
     output_dir = dir+output_dir
     model_path = dir+model_path
     src_dataname = dir+src_dataname

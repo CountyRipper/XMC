@@ -1,6 +1,8 @@
 from argparse import ArgumentParser
 import os
 import re
+
+import torch
 from combine import get_combine_bi_list, get_combine_list
 from rank import rank_bi,rank
 from rank_training import rank_train
@@ -8,67 +10,98 @@ from rank_training import rank_train
 from trainer_kp import modeltrainer
 from utils.p_at_1 import p_at_k
 
-
 def run(args:ArgumentParser):
+    
+    datadir = ['./dataset/EUR-Lex/','./dataset/Wiki500K/','./dataset/AmazonCat-13K/',
+               './dataset/AmazonCat-13K-10/','./dataset/Wiki500K-20/']
+
+    models = {'pega':1,'bart':0,'kb':0}
+    args.datadir = datadir[1]
+    args.modelname = 'pegausu-large'
+    args.outputmodel = 'peagsus_save'
+    args.checkdir = 'pegasus_check'
+    args.batch_size = 2
+    args.epoch = 5
+    args.istrain = False
+    args.is_pred_trn = False
+    args.is_pred_tst = False
+    args.iscombine = True
+    args.combine_model = 'bi-encoder'
+    args.is_rank_train  =False
+    args.is_ranking = True
+    args.rank_model = 'cross-encoder/stsb-roberta-base'
+    args.rankmodel_save = 'cr_en'
+    affix1 = 'pega'
+    if re.match("\w*bart\w*",args.modelname,re.I):
+        affix1 = 'ba'
+    elif re.match("\w*pegasus\w*",args.modelname,re.I):
+        affix1 = 'pega'
+    elif re.match("\w*T5\w*",args.modelname,re.I):
+        affix1 = 't5'
+    elif re.match("\w*kaybart\w*",args.modelname,re.I):
+        affix1 = 'kb'
+    args.affix1=affix1
     print(args)
-    args.modelname = 'bart-large'
-    args.outputmodel = 'bart_save'
-    args.checkdir = 'bart_check'
+    
     trainer = modeltrainer(args)
     #define affix
-    if re.match("\w*bart\w*",args.modelname,re.I):
-        affix = 'ba'
-    elif re.match("\w*pegasus\w*",args.modelname,re.I):
-        affix = 'pega'
-    elif re.match("\w*T5\w*",args.modelname,re.I):
-        affix = 't5'
-    elif re.match("\w*kaybart\w*",args.modelname,re.I):
-        affix = 'kb'
-    else: affix = ''
-    args.add_argument('--affix',type=str,default=affix)
-    
     if args.istrain:
         #run finetune
-        trainer.train()
+        torch.cuda.empty_cache()
+        trainer.train()   
+    
+    args.top_k = 10
+    args.data_size = 14
     if args.is_pred_trn:
-        trainer.predicting(args.outputmodel,args.train_texts,"train_pred"+"_"+affix+".txt")
+        torch.cuda.empty_cache()
+        trainer.predicting(args.outputmodel,args.train_json,"train_pred"+"_"+affix1+".txt")    
+    
     if args.is_pred_tst:
-        trainer.predicting(args.outputmodel,args.test_texts,"test_pred"+"_"+affix+".txt")
+        torch.cuda.empty_cache()
+        trainer.predicting(args.outputmodel,args.test_json,"test_pred"+"_"+affix1+".txt")    
+    
+    affix2='bi' #默认c r
     if args.iscombine:
         if args.combine_model=='cross-encoder':
-            if os.path.exists(os.path.join(args.datadir,"train_pred"+"_"+affix+".txt")):
-                get_combine_list(args.datadir,"train_pred"+"_"+affix+".txt",
-                                 args.all_labels,"train_combine_"+affix+".txt") #train_pred_fix.txt
-            if os.path.exists(os.path.join(args.datadir,"test_pred"+"_"+affix+".txt")):
-                get_combine_list(args.datadir,"test_pred"+"_"+affix+".txt",
-                                 args.all_labels,"test_combine_"+affix+".txt") #test_pred_fix.txt
-        else:
-            if os.path.exists(os.path.join(args.datadir,"train_pred"+"_"+affix+".txt")):
-                get_combine_bi_list(args.datadir,"train_pred"+"_"+affix+".txt",
-                                    args.all_labels,"train_combine_"+affix+".txt") #train_pred_fix.txt
-            if os.path.exists(os.path.join(args.datadir,"test_pred"+"_"+affix+".txt")):
-                get_combine_bi_list(args.datadir,"test_pred"+"_"+affix+".txt",
-                                    args.all_labels,"test_combine_"+affix+".txt") #test_pred_fix.txt    
-    args.is_rank_train=True
-    args.rank_model = "all-MiniLM-L6-v2"
-    if re.match("\w*cross-encoder\w*",args.rank_model,re.I):
-        affix1 = 'cr'
-    else: affix1 = 'bi' 
-        
-    if args.is_rank_train:
-        rank_train(args.datadir,args.rank_model,args.train_texts,"train_combine_"+affix+".txt",args.train_labels,args.rankmodel_save)
-    if args.is_ranking :
-        if affix1 =='cr':
-            rank(args.datadir,args.test_texts,"test_combine_"+affix+".txt",args.model_save,"test_ranked_"+affix+affix1+".txt")
-        else:
-            rank_bi(args.datadir,args.test_texts,"test_combine_"+affix+".txt",args.model_save,"test_ranked_"+affix+affix1+".txt")
-    p_at_k(args.datadir,args.test_labels,"test_ranked_"+affix+affix1+".txt")    
+            affix2='cr'
+            if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
+                get_combine_list(args.datadir,"train_pred"+"_"+affix1+affix2+".txt",
+                                 args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
+            if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
+                get_combine_list(args.datadir,"test_pred"+"_"+affix1+affix2+".txt",
+                                 args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt
+        else: # using bi
+            affix2='bi'
+            if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
+                get_combine_bi_list(args.datadir,"train_pred"+"_"+affix1+".txt",
+                                    args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
+            if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
+                get_combine_bi_list(args.datadir,"test_pred"+"_"+affix1+".txt",
+                                    args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt    
     
-        
-
+    #args.rank_model = "all-MiniLM-L6-v2"
+    #args.rank_model = ""
+    affix3 = 'cr'
+    if re.match("\w*cross-encoder\w*",args.rank_model,re.I):
+        affix3 = 'cr'
+    else: affix3 = 'bi' 
+    
+    if args.is_rank_train:
+        rank_train(args.datadir,args.rank_model,args.train_texts,"train_combine_labels_"+affix1+affix2+".txt",args.train_labels,args.rankmodel_save)
+    
+    if args.is_ranking :
+        if affix3 =='cr':
+            rank(args.datadir,args.test_texts,"test_combine_labels_"+affix1+affix2+".txt",args.rankmodel_save,"test_ranked_labels_"+affix1+affix2+affix3+".txt")
+        else:
+            rank_bi(args.datadir,args.test_texts,"test_combine_labels_"+affix1+affix2+".txt",args.model_save,"test_ranked_labels_"+affix1+affix2+affix3+".txt")
+    p_at_k(args.datadir,args.test_labels,"test_ranked_labels_"+affix1+affix2+affix3+".txt",args.datadir+"res_"+affix1+affix2+affix3+".txt")    
 
 if __name__ == '__main__':
     parser = ArgumentParser()
+    parser.add_argument('--datadir', type=str, default='./dataset/EUR-Lex/',
+                        help='dataset_dir')
+    parser.add_argument('--test_json',type=str,default='test_finetune.json')
+    parser.add_argument('--train_json',type=str,default='train_finetune.json')
     parser.add_argument('--all_labels',type=str,default='all_labels.txt')
     parser.add_argument('--test_labels',type=str,default='test_labels.txt')
     parser.add_argument('--train_labels',type=str,default="train_labels.txt")
@@ -83,8 +116,8 @@ if __name__ == '__main__':
                         help='number of epochs to train (default: 100)')
     parser.add_argument('--modelname', type=str,default='pegasus',
                         help='modelname ')
-    parser.add_argument('--datadir', type=str, default='./dataset/EUR-Lex/',
-                        help='dataset_dir')
+    parser.add_argument('--affix1',type=str,default="")
+    parser.add_argument('--affix2',type=str,default="")
     parser.add_argument('--checkdir', type=str, default='pegasus_check',
                         help='path to trained model to save')
     parser.add_argument('--outputmodel',type=str,default='pegasus_save',
@@ -99,13 +132,11 @@ if __name__ == '__main__':
     parser.add_argument('--is_pred_tst',type=bool,default=True,
                         help="Whether run predicting testing dataset")
     parser.add_argument('--top_k',type=int,default=10)
-    parser.add_argument('--')
-
+    parser.add_argument('--data_size',type=int,default=12)
     #combine part
     parser.add_argument('--iscombine',type=bool,default=True,
                         help="Whether run combine")
     parser.add_argument('--combine_model',type=str,default='cross-encoder')
-
     parser.add_argument('--combine_testdir',type=str,default="test_pred.txt")
     parser.add_argument('--combine_traindir',type=str,default="train_pred.txt")
     parser.add_argument('--combine_testout',type=str,default="test_combine_labels.txt")

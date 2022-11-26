@@ -5,6 +5,7 @@
 # from nltk.stem.porter import *
 # from nltk.stem.snowball import SnowballStemmer
 # from nltk.tokenize import word_tokenize  
+import os
 import re
 from sentence_transformers import SentenceTransformer, InputExample, losses
 
@@ -27,10 +28,10 @@ def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_s
     label_list=[]
     pred_label_list=[]
     label_score_list=[]  
-    text_src=dir+text_data
-    train_pred_src=dir+train_pred_data
-    train_label_src= dir+train_label_data
-    model_save_dir = dir+model_save_dir
+    text_src=os.path.join(dir,text_data)
+    train_pred_src=os.path.join(dir,'res',train_pred_data)
+    train_label_src= os.path.join(dir,train_label_data)
+    model_save_dir = os.path.join(dir,model_save_dir)
     print("text_data: "+text_src)
     print("train_pred_data"+train_pred_src)
     print("train_label_src:"+train_label_src)
@@ -70,11 +71,11 @@ def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_s
             fb.write(each)
             fb.write("\n")    
     #print('file complete')
-    num_epoch = 5
+    num_epoch = 4
     # cross-encoder
     if re.match('\w*cross-encoder\w*',model_name,re.I):
-        model = CrossEncoder(model, num_labels=1)
-        train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=128)
+        model = CrossEncoder(model_name, num_labels=1)
+        train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=24)
         # shuffle=True
         print("batch_size="+ "24")
         # Configure the training
@@ -89,7 +90,7 @@ def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_s
         model.save(model_save_dir)
     #bi-encoder
     else:
-        model = SentenceTransformer(model)
+        model = SentenceTransformer(model_name)
         #model = SentenceTransformer('all-MiniLM-L6-v2')
         train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=128)
         train_loss = losses.CosineSimilarityLoss(model)

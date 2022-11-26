@@ -93,12 +93,47 @@ def stem_labels(data_name,outputname=None)->List[str]:
                 for i in stem_result:
                     f.write(str(i)+"\n")
         return stem_labels  
-   
+
+'''
+input : label_index, all_label
+output : raw_label
+'''   
+def label_index_to_label_raw(index_data,all_label_data,outputdata=None)->List[List]:
+    print('index_data:'+index_data)
+    print('all_label_data:'+all_label_data)
+    print('outputdata:'+outputdata)
+    all_label_list = []
+    label_index_list = []
+    label_set_list = [] #res 真正的label集合列表
+    with open(all_label_data,'r') as rf:
+        for each in rf:
+            all_label_list.append(each.rstrip('\n'))
+    with open(index_data,'r') as rf:
+        for each in rf:
+            each_list = []
+            for i in each.rstrip('\n').split(' '):
+                each_list.append(int(i))
+            label_index_list.append(each_list)
+    #根据索引获取真实标签
+    for each_set in label_index_list:
+        label_list = []
+        for ind in each_set:
+            label_list.append(all_label_list[ind])
+        label_set_list.append(label_list)
+    if outputdata:
+        with open(outputdata, 'w+') as w:
+            for row in label_set_list:
+                w.write(", ".join(row))
+                w.write('\n')
+    return label_set_list
+            
+            
+            
 """
 将txt转化为json来训练
-outputname shold be: data_name+".json",注意output dir，并且都是词干化的
+outputname shold be: data_name+".json",注意output dir，并且都是词干化的(不一定词干化)
 """
-def txt_to_json(text_name,label_name,outputname=None):
+def txt_to_json(text_name,label_name,outputname):
     text_path = text_name+".txt"
     label_path = label_name+".txt"
     json_path = outputname+".json"

@@ -1,3 +1,4 @@
+import os
 from typing import List
 from sentence_transformers.cross_encoder import CrossEncoder
 # import nltk
@@ -8,7 +9,7 @@ from tqdm import tqdm
 
 def rank(dir,text_dir,pred_combine_dir,model_dir,outputdir=None)-> List[List[str]]:
     text_dir=dir+text_dir
-    pred_combine_dir=dir+pred_combine_dir
+    pred_combine_dir=os.path.join(dir,'res',pred_combine_dir)
     model_dir=dir+model_dir
     outputdir = dir+outputdir
     print('rank processing:'+'\n')
@@ -36,16 +37,22 @@ def rank(dir,text_dir,pred_combine_dir,model_dir,outputdir=None)-> List[List[str
         #ranked_list=[]
         src_text = text_list[i]
         cur_label_set = pred_label_list[i]
+        pairs = []
         for each_label in cur_label_set:
-            score = model.predict([src_text,each_label])
-            score_list.append((each_label,score))
+            pairs.append([src_text,each_label])
+            #score = model.predict([src_text,each_label])
+            #score_list.append((each_label,score))
+        scores = model.predict(pairs)
+        scores_list = zip(scores,cur_label_set)
+        
         if i%1000==0:
-            print(score_list)
-        score_list.sort(key= lambda x:x[1],reverse=True) #按照分数排序
+            print(scores_list)
+        #scores_list.sort(key= lambda x:x[1],reverse=True) #按照分数排序
+        scores_list = sorted(scores_list,reverse=True)
         if i%1000==0:
-            print(score_list)
-        scores_list.append(score_list)
-        ranked_list.append(list(map(lambda x:x[0],score_list)))#抽取label部分
+            print(scores_list)
+        #scores_list.append(scores)
+        ranked_list.append(list(map(lambda x:x[1],scores_list)))#抽取label部分
     if outputdir:
         with open(outputdir,'w+') as w1:
             for row in ranked_list:

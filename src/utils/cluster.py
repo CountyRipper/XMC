@@ -1,3 +1,5 @@
+
+from typing import List
 from numpy import float32
 import torch
 from scipy.spatial.distance import cosine
@@ -40,6 +42,10 @@ def get_embedding(datadir,srcdata):
             batch=[]
     return res
 
+'''
+input all_label torch embedding list
+output all_label clusters, clusters' embeddings
+'''
 def get_means(embedding_list:torch.tensor,output=None):
     #获得每个label对应的簇属，返回对应的字典列表
     nplist = []
@@ -50,12 +56,15 @@ def get_means(embedding_list:torch.tensor,output=None):
     #km.n_iter_ = 10000
     km.fit(X)
     res=[]
+    #获得中心的np向量
     clusters = km.cluster_centers_
     for ind,i in enumerate(nplist):
+        #why [i]
         res.append({'k_index':km.predict([i]),'src':ind})
     if output:
         with open(output,'w+') as w:
             for i in res:
                 w.write(str(i)+"\n")
+    return res,clusters
     # Get the embeddings
-    
+ 

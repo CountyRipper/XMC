@@ -1,10 +1,10 @@
 import json
 import os
 import torch
-import tqdm
-from transformers import (AutoTokenizer,BartTokenizer, BartForConditionalGeneration,Seq2SeqTrainer, 
-                          Seq2SeqTrainingArguments,PegasusForConditionalGeneration, PegasusTokenizer,
-                          T5ForConditionalGeneration,T5Tokenizer,AutoModelForSeq2SeqLM)
+from tqdm import tqdm
+from transformers import (AutoTokenizer,BartTokenizerFast, BartForConditionalGeneration,Seq2SeqTrainer, 
+                          Seq2SeqTrainingArguments,PegasusForConditionalGeneration, PegasusTokenizerFast,
+                          T5ForConditionalGeneration,T5TokenizerFast,AutoModelForSeq2SeqLM)
 import time,datetime
 from torch.utils.data import DataLoader
 class MyData(torch.utils.data.Dataset):
@@ -37,27 +37,28 @@ class modeltrainer(object):
         self.output = self.datadir + args.outputmodel
         self.batch_size = args.batch_size
         self.epoch = args.epoch
-        self.affix = args.affix
+        self.affix = args.affix1
         self.top_k=args.top_k
+        self.data_size = args.data_size
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         if self.modelname=='bart-large' or self.modelname=='BART-large' or self.modelname=='Bart-large':
             self.model = BartForConditionalGeneration.from_pretrained("facebook/bart-large",cache_dir='./models').to(self.device)
-            self.tokenizer = BartTokenizer.from_pretrained(pretrained_model_name_or_path="facebook/bart-large",cache_dir='./models')
+            self.tokenizer = BartTokenizerFast.from_pretrained(pretrained_model_name_or_path="facebook/bart-large",cache_dir='./models')
         elif self.modelname=='bart' or self.modelname=='BART' or self.modelname=='Bart':
             self.model = BartForConditionalGeneration.from_pretrained("facebook/bart-base",cache_dir='./models').to(self.device)
-            self.tokenizer = BartTokenizer.from_pretrained(pretrained_model_name_or_path="facebook/bart-base",cache_dir='./models')
+            self.tokenizer = BartTokenizerFast.from_pretrained(pretrained_model_name_or_path="facebook/bart-base",cache_dir='./models')
         elif self.modelname=='pegasus' or self.modelname=='Pegasus':
             self.model = PegasusForConditionalGeneration.from_pretrained('google/pegasus-large',cache_dir='./models').to(self.device)
-            self.tokenizer = PegasusTokenizer.from_pretrained(pretrained_model_name_or_path="facebook/bart-large",cache_dir='./models')
+            self.tokenizer = PegasusTokenizerFast.from_pretrained(pretrained_model_name_or_path="facebook/bart-large",cache_dir='./models')
         elif self.modelname=='pegasus-xsum' or self.modelname=='Pegasus-xsum':
             self.model = PegasusForConditionalGeneration.from_pretrained('google/pegasus-xsum',cache_dir='./models').to(self.device)
-            self.tokenizer = PegasusTokenizer.from_pretrained(pretrained_model_name_or_path="facebook/bart-large",cache_dir='./models')
+            self.tokenizer = PegasusTokenizerFast.from_pretrained(pretrained_model_name_or_path="facebook/bart-large",cache_dir='./models')
         elif self.modelname=='t5' or self.modelname=='T5':
             self.model = T5ForConditionalGeneration.from_pretrained("google/t5-v1_1-base",cache_dir='./models').to(self.device)
-            self.tokenizer = T5Tokenizer.from_pretrained("google/t5-v1_1-base",cache_dir='./models')
+            self.tokenizer = T5TokenizerFast.from_pretrained("google/t5-v1_1-base",cache_dir='./models')
         elif self.modelname=='t5-large' or self.modelname=='T5-large':
             self.model = T5ForConditionalGeneration.from_pretrained("google/t5-v1_1-large",cache_dir='./models').to(self.device)
-            self.tokenizer = T5Tokenizer.from_pretrained("google/t5-v1_1-large",cache_dir='./models')
+            self.tokenizer = T5TokenizerFast.from_pretrained("google/t5-v1_1-large",cache_dir='./models')
         elif self.modelname=='keybart' or  self.modelname=='KeyBART':
             self.tokenizer = AutoTokenizer.from_pretrained("bloomberg/KeyBART",cache_dir='./models')
             self.model = AutoModelForSeq2SeqLM.from_pretrained("bloomberg/KeyBART",cache_dir='./models').to(self.device)
@@ -73,8 +74,8 @@ class modeltrainer(object):
         print('modelname:'+self.modelname)
         print('checkdir:'+self.checkdir)
         print('save_dir:'+self.output)
-        print('batch_size:'+self.batch_size)
-        print('epoch:'+self.epoch)       
+        print('batch_size:',self.batch_size)
+        print('epoch:',self.epoch)       
         from datasets import load_dataset
         prefix = "summarize: "
         dataset = load_dataset('json',data_files={'train': train_dir, 'valid': valid_dir}).shuffle(seed=42)
@@ -109,15 +110,15 @@ class modeltrainer(object):
         
     def train(self):
         start = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        print('train start:'+start)
-        time_stap1 = time.clock()
+        print('train start:',start)
+        time_stap1 = time.process_time()
         self.__finetune()
-        time_stap2 = time.clock()
+        time_stap2 = time.process_time()
         end =  datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        print('tarin end:'+ end)
+        print('tarin end:', end)
         print('tarining cost time:'+ str((time_stap2-time_stap1)/60/60 )+"hours.")
         with open(os.path.join(self.datadir,"train_log.txt"),'a+')as w: 
-            w.write("datadir:"+self.datadir+", "+"model_name: "+self.modelname+", "+"batch_size: "+self.batch_size+"epoch: "+self.epoch+"\n"
+            w.write("datadir:"+self.datadir+", "+"model_name: "+self.modelname+", "+"batch_size: "+str(self.batch_size)+"epoch: "+str(self.epoch)+"\n"
                     "checkdir: "+self.checkdir+", "+"output: "+self.output+"\n")
             w.write("starttime:"+start+". ")
             w.write("endtime: "+end+"\n")
@@ -133,7 +134,7 @@ class modeltrainer(object):
         return pre_result   
     
     def predicting(self,modelname,src_dataname,output_dir=''):
-        modelname = os.path.join(output_dir,modelname)
+        modelname = os.path.join(self.datadir,modelname)
         print("modelname: ", modelname)
         output_dir = os.path.join(self.datadir,'res',output_dir)
         print('output: '+output_dir)
@@ -142,18 +143,25 @@ class modeltrainer(object):
         #this tokenizer is not the self.tokenizer
         if (self.affix=='ba'):
             model = BartForConditionalGeneration.from_pretrained(modelname).to(self.device)
-            tokenizer = BartTokenizer.from_pretrained(modelname)
+            tokenizer = BartTokenizerFast.from_pretrained(modelname)
+            tokenizer.save_pretrained(self.datadir+"bart_tokenizer")
+            tokenizer.save_vocabulary(self.datadir+"bart_tokenizer")
         elif (self.affix=='pega'):
             model = PegasusForConditionalGeneration.from_pretrained(modelname).to(self.device)
-            tokenizer = PegasusTokenizer.from_pretrained(modelname)
+            tokenizer = PegasusTokenizerFast.from_pretrained(modelname)
+            tokenizer.save_pretrained(self.datadir+"pegasus_tokenizer")
+            tokenizer.save_vocabulary(self.datadir+"pegasus_tokenizer")
         elif (self.affix=='t5'):
             model = T5ForConditionalGeneration.from_pretrained(modelname).to(self.device)
-            tokenizer = T5Tokenizer.from_pretrained(modelname)
+            tokenizer = T5TokenizerFast.from_pretrained(modelname)
+            tokenizer.save_pretrained(self.datadir+"t5_tokenizer")
+            tokenizer.save_vocabulary(self.datadir+"t5_tokenizer")
         else :
             tokenizer = AutoTokenizer.from_pretrained(modelname)
             model = AutoModelForSeq2SeqLM.from_pretrained(modelname).to(self.device)
-        tokenizer=tokenizer.save_pretrained(modelname+"_tokenizer")
-        tokenizer =tokenizer.save_vocabulary(modelname+"_tokenizer")
+        #tokenizer=tokenizer.save_pretrained(modelname+"_tokenizer")
+        #tokenizer =tokenizer.save_vocabulary(modelname+"_tokenizer")
+        tokenizer.get_added_vocab()
         data = []
         dic = [] # dictionary for save each model generate result
         src_value = [] # using for get source document which is used to feed into model, and get predicting result
@@ -164,7 +172,7 @@ class modeltrainer(object):
             for line in f:
                 data.append(json.loads(line)['document'])
             # 进度条可视化 vision process
-            dataloader = DataLoader(data,batch_size=32)
+            dataloader = DataLoader(data,batch_size= self.data_size)
             f=open(output_dir,'w+')
             f.close()
             with open(output_dir,'a+') as t:

@@ -1,18 +1,27 @@
 import os
-from traceback import print_tb
+import pickle
 from typing import List
 from sentence_transformers import CrossEncoder
 from sentence_transformers import SentenceTransformer, util
+import torch
 
 from utils.detector import log
-model_c = CrossEncoder('cross-encoder/stsb-roberta-base')
-model_b = SentenceTransformer('all-MiniLM-L6-v2')
+model_c = CrossEncoder('cross-encoder/stsb-roberta-base',device='cuda')
+model_b = SentenceTransformer('all-MiniLM-L6-v2',device='cuda')
 from tqdm import tqdm
-
+'''
+input : 数据集目录，预测出来的标签数据，参考标签数据
+output: 输出替换标签
+读取all标签数据，通过simcse获得embedding，将embedding送入kmeans无监督聚类，聚类完成后获得all_label的簇组以及每个簇中心的embedding
+计算预测标签的嵌入层，通过kmeans预测所属簇，然后用cross-encoder计算该标签和所有标签的的分排序，然后进行替换
+'''
+def cluster_combine(data_dir,pred_data,reference_data,outputdir=None)-> List[List[str]]:
+    pass
 #getcombine by cross-encoder
 def get_combine_list(data_dir,pred_data,reference_data,outputdir=None)-> List[List[str]]:
     print('get_combine_list')
-    print('write into: '+data_dir+outputdir)
+    outputdir = os.path.join(data_dir,'res',outputdir)
+    print('write into: '+outputdir)
     pred_list=[]
     all_label_list=[]
     combine_list=[]
@@ -75,7 +84,7 @@ def get_combine_bi_list(data_dir,pred_data,reference_data,outputdir=None)-> List
     reference_data = os.path.join(data_dir,reference_data)
     print('pred_data: '+pred_data)
     print('reference:'+reference_data)
-    outputdir=os.path.join(data_dir,outputdir)
+    outputdir=os.path.join(data_dir,'res',outputdir)
     print('data_dir: '+data_dir)
     print('write into: '+outputdir)
     pred_list=[]
@@ -89,11 +98,18 @@ def get_combine_bi_list(data_dir,pred_data,reference_data,outputdir=None)-> List
     with open(reference_data,'r+') as f2:
         for i in f2:
             all_label_list.append(i.rstrip())
-    embeddings_all = model_b.encode(all_label_list,convert_to_tensor=True)
+    if not os.path.exists(data_dir+"all_labels.pkl"):
+        embeddings_all = model_b.encode(all_label_list,convert_to_tensor=True)
+        with open(data_dir+"all_labels.pkl", "wb") as fOut:
+            pickle.dump({'embeddings': embeddings_all}, fOut, protocol=pickle.HIGHEST_PROTOCOL)
+    else:
+        with open(data_dir+'all_labels.pkl', "rb") as fIn:
+            stored_data = pickle.load(fIn)
+            #stored_sentences = stored_data['sentences']
+            embeddings_all = stored_data['embeddings']
     for i in tqdm(range(len(pred_list))):
         no_equal_list=[]
         for ind,each_label in enumerate(pred_list[i]):
-            pair=[]
             #此处可以考虑不换位置，但是会更复杂，不确定是否会影响结果，单纯extend的话有可能劣化结果
             if each_label not in all_label_list:
                 no_equal_list.append({'ind':ind,'label':each_label})
@@ -105,12 +121,16 @@ def get_combine_bi_list(data_dir,pred_data,reference_data,outputdir=None)-> List
         cosine_score = util.cos_sim(embeddings_pre,embeddings_all)
         #cosine_score是一个len(no_equal_list)行，(all_label_list)列的一个矩阵
         #cosine_score的长度一定等于no_equal_list
+        device1 = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        flag = torch.zeros(len(all_label_list),device=device1)
         for j in range(len(cosine_score)):
-            max_ind = cosine_score[j].argmax(0)
-            while all_label_list[max_ind] in pred_list: #if prelist has this candidate label
-                del cosine_score[j][max_ind]
-                max_ind = cosine_score[j].argmax(0)
+            this_score = torch.add(cosine_score[j],flag)
+            max_ind = torch.argmax(this_score)
+            #while all_label_list[max_ind] in pred_list: #if prelist has this candidate label
+            #    cosine_score[j][max_ind]=0
+            #    max_ind = cosine_score[j].argmax(0)
             no_equal_list[j]['label'] =  all_label_list[max_ind]
+            flag[max_ind] = -2.0
         for j in no_equal_list:
             pred_list[i][j['ind']] = j['label']
     if outputdir:

@@ -82,10 +82,10 @@ if __name__ == '__main__':
     if models['pega']:
         #fine_tune_pegasus_light(datadir[da],tasks[1]+'_finetune.json',tasks[1]+'_finetune.json',"pegasus_save_b","pegasus_check_b","google/bigbird-pegasus-large-bigpatent")
         #Pegasus_fine_tune(datadir[da],tasks[1]+'_finetune.json',tasks[1]+'_finetune.json',"pegasus_save","pegasus_check")
-        for i in range(1):
-            get_pred_Pegasus_fast(datadir[da],gener+tasks[i]+"_pred.txt",tasks[i]+"_finetune.json","pegasus_save")
+        for i in range(0):
+            #get_pred_Pegasus_fast(datadir[da],gener+tasks[i]+"_pred0.txt",tasks[i]+"_finetune.json","pegasus_save")
             get_combine_bi_list(datadir[da],gener+tasks[i]+"_pred.txt","all_labels.txt",gener+tasks[i]+"_combine_labels_bi.txt")
-        #rank_train_BI(datadir[da],tasks[1]+"_texts.txt",gener+tasks[1]+"_combine_labels_bi.txt",tasks[1]+"_labels.txt","bi_en")
+        rank_train(datadir[da],'cross-encoder/stsb-roberta-base',tasks[1]+"_texts.txt",gener+tasks[1]+"_combine_labels_bi20.txt",tasks[1]+"_labels.txt","cr_en")
         rank(datadir[da],tasks[0]+"_texts.txt",gener+tasks[0]+"_combine_labels_bi.txt","cr_en",gener+tasks[0]+"_ranked_labels.txt")
         res = p_at_k(datadir[da],tasks[0]+"_labels.txt",gener+tasks[0]+"_combine_labels_bi.txt",datadir[da]+"res_pega.txt")
         res = p_at_k(datadir[da],tasks[0]+"_labels.txt",gener+tasks[0]+"_ranked_labels.txt",datadir[da]+"res_pega.txt")
