@@ -1,6 +1,6 @@
 from transformers import PegasusForConditionalGeneration, PegasusTokenizerFast
 import json
-from premethod import batch_pred
+from utils.premethod import batch_pred
 # import torch
 # import ast
 from tqdm import tqdm

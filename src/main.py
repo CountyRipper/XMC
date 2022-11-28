@@ -1,16 +1,16 @@
 from argparse import ArgumentParser
 from trainer_kp import *
-from premethod import stem_labels,txt_to_json,get_all_labels,get_all_stemlabels,bart_clean
-from pegasus_fine_tune import Pegasus_fine_tune
-from generate_pegasus import *
+from utils.premethod import stem_labels,txt_to_json,get_all_labels,get_all_stemlabels,bart_clean
+from utils.pegasus_fine_tune import Pegasus_fine_tune
+from utils.generate_pegasus import *
 from combine import *
 from rank import rank, rank_bi
 from rank_training import rank_train, rank_train_BI
 from utils.p_at_1 import p_at_k
-from keybart_finetune import *
-from keybart_generate import get_pred_Keybart
-from bart_finetune import fine_tune_bart
-from bart_generate import get_pred_bart, get_pred_bart_batch
+from utils.keybart_finetune import *
+from utils.keybart_generate import get_pred_Keybart
+from utils.bart_finetune import fine_tune_bart
+from utils.bart_generate import get_pred_bart, get_pred_bart_batch
 import  re
 def run(args:ArgumentParser):
     print(args)

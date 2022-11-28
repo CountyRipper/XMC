@@ -1,7 +1,7 @@
 #from premethod import *
 #from cluster import *
 import re
-from premethod import label_index_to_label_raw,txt_to_json
+from utils.premethod import label_index_to_label_raw,txt_to_json
 from tqdm import tqdm
 datadir = ['./dataset/EUR-Lex/','./dataset/Wiki500K/','./dataset/AmazonCat-13K/','./dataset/AmazonCat-13K-10/','./dataset/Wiki10-31K/']
 # k_fold = [1,2,3,4,5]

@@ -4,7 +4,7 @@ import re
 
 import torch
 from combine import get_combine_bi_list, get_combine_list
-from premethod import clean_set
+from utils.premethod import clean_set
 from rank import rank_bi,rank
 from rank_training import rank_train
 

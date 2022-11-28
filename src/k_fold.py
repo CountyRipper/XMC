@@ -1,7 +1,7 @@
 
 from combine import get_combine_list
-from generate_pegasus import get_pred_Pegasus
-from pegasus_fine_tune import Pegasus_fine_tune
+from utils.generate_pegasus import get_pred_Pegasus
+from utils.pegasus_fine_tune import Pegasus_fine_tune
 from rank import rank
 from rank_training import rank_train
 from utils.p_at_1 import p_at_k
