@@ -3,21 +3,40 @@
 import re
 from premethod import label_index_to_label_raw,txt_to_json
 from tqdm import tqdm
-datadir = ['./dataset/EUR-Lex/','../dataset/Wiki500K/','./dataset/AmazonCat-13K/','./dataset/AmazonCat-13K-10/','./dataset/Wiki10-31K/']
+datadir = ['./dataset/EUR-Lex/','./dataset/Wiki500K/','./dataset/AmazonCat-13K/','./dataset/AmazonCat-13K-10/','./dataset/Wiki10-31K/']
 # k_fold = [1,2,3,4,5]
+labels_list=[]
+with open(datadir[1]+"res/test_combine_labels_pegabi.txt",'r+') as r:
+    for i in r:
+        labels_list.append(i.rstrip('\n').split(', '))
+count=0
+for i in range(len(labels_list)):
 
+    tmp = []
+    for j in labels_list[i]:
+        if j not in tmp:
+            tmp.append(j)
+        else:
+            count=count+1
+    labels_list[i] = list(tmp)
+print('count',count)
+# with open(datadir[1]+"res/test_combine_labels_pegabi1.txt",'w+') as w:
+#     for i in labels_list:
+#         w.write(", ".join(i))
+#         w.write('\n')
+    
 #label_index_to_label_raw(datadir[4]+'test_labels_ind.txt',datadir[4]+'all_labels.txt',datadir[4]+'test_labels.txt')
 #label_index_to_label_raw(datadir[4]+'train_labels_ind.txt',datadir[4]+'all_labels.txt',datadir[4]+'train_labels.txt')
 # txt_to_json(datadir[4]+'test_texts',datadir[4]+'test_labels',datadir[4]+'test_finetune')
 # txt_to_json(datadir[4]+'train_texts',datadir[4]+'train_labels',datadir[4]+'train_finetune')
-label_list = []
-with open(datadir[1]+'all_labels.txt','r') as r:
-    for i in tqdm(r):
-        label_list.append(i.rstrip('\n'))
-label_list = list(map(lambda x: x.replace('_',' '),label_list))
-with open(datadir[1]+'all_labels1.txt','w+') as w:
-    for i in tqdm(label_list):
-        w.write(i+'\n')
+# label_list = []
+# with open(datadir[1]+'all_labels.txt','r') as r:
+#     for i in tqdm(r):
+#         label_list.append(i.rstrip('\n'))
+# label_list = list(map(lambda x: x.replace('_',' '),label_list))
+# with open(datadir[1]+'all_labels1.txt','w+') as w:
+#     for i in tqdm(label_list):
+#         w.write(i+'\n')
 
 
 # labels =[]

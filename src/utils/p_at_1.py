@@ -1,3 +1,4 @@
+import os
 import string 
 import json
 import nltk
@@ -12,7 +13,7 @@ stemmer = SnowballStemmer("english")
 stemmer2 = SnowballStemmer("english", ignore_stopwords=True)
 def p_at_k(dir, src_label_dir,pred_label_dir,outputdir)->list:
     src_label_dir = dir+src_label_dir
-    pred_label_dir = dir+pred_label_dir
+    pred_label_dir = os.path.join(dir,'res',pred_label_dir)
     print("p_at_k:"+'\n')
     print("src_label: "+src_label_dir)
     print("pred_label: "+pred_label_dir)

@@ -1,0 +1,3 @@
+#! /bin/zsh
+#conda activate ddd
+nohup python -u ./src/main_run.py --datadir='./dataset/Wiki10-31K/' --istrain=0 --is_pred_trn=1 --is_pred_tst=1 --iscombine=1 --is_rank_train=1 --is_ranking=1 --combine_model='bi-encoder' --is_rank_train=1 --is_ranking=1 --modelname='t5-large' --outputmodel='t5l_save' --batch_size=2 --epoch=5 --checkdir='t5l_check' --data_size=8 --combine_model='bi-encoder' --rank_model='cross-encoder/stsb-roberta-base' --rank_batch=42 --rankmodel_save='cr_en'>> ./output.log 2>&1 &

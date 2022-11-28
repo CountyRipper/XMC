@@ -4,6 +4,7 @@ import re
 
 import torch
 from combine import get_combine_bi_list, get_combine_list
+from premethod import clean_set
 from rank import rank_bi,rank
 from rank_training import rank_train
 
@@ -16,28 +17,32 @@ def run(args:ArgumentParser):
                './dataset/AmazonCat-13K-10/','./dataset/Wiki500K-20/']
 
     models = {'pega':1,'bart':0,'kb':0}
-    args.datadir = datadir[1]
-    args.modelname = 'pegausu-large'
-    args.outputmodel = 'peagsus_save'
-    args.checkdir = 'pegasus_check'
-    args.batch_size = 2
-    args.epoch = 5
-    args.istrain = False
-    args.is_pred_trn = False
-    args.is_pred_tst = False
-    args.iscombine = True
-    args.combine_model = 'bi-encoder'
-    args.is_rank_train  =False
-    args.is_ranking = True
-    args.rank_model = 'cross-encoder/stsb-roberta-base'
-    args.rankmodel_save = 'cr_en'
+    # args.datadir = datadir[1]
+    # args.modelname = 'pegausu-large'
+    # args.outputmodel = 'pegasus_save'
+    # args.checkdir = 'pegasus_check'
+    # args.batch_size = 2
+    # args.epoch = 5
+    # args.istrain = False
+    # args.is_pred_trn = False
+    # args.is_pred_tst = False
+    # args.iscombine = False
+    # args.combine_model = 'bi-encoder'
+    # args.is_rank_train  =False
+    # args.is_ranking = True
+    # args.rank_model = 'cross-encoder/stsb-roberta-base'
+    # args.rankmodel_save = 'cr_en'
     affix1 = 'pega'
     if re.match("\w*bart\w*",args.modelname,re.I):
         affix1 = 'ba'
+        if re.match("\w*bart-large\w*",args.modelname,re.I):
+            affix1 = 'bal'
     elif re.match("\w*pegasus\w*",args.modelname,re.I):
         affix1 = 'pega'
     elif re.match("\w*T5\w*",args.modelname,re.I):
         affix1 = 't5'
+        if re.match("\w*T5-large\w*",args.modelname,re.I):
+            affix1='t5l'
     elif re.match("\w*kaybart\w*",args.modelname,re.I):
         affix1 = 'kb'
     args.affix1=affix1
@@ -50,16 +55,16 @@ def run(args:ArgumentParser):
         torch.cuda.empty_cache()
         trainer.train()   
     
-    args.top_k = 10
-    args.data_size = 14
+    #args.top_k = 10
+    #args.data_size = 14
     if args.is_pred_trn:
         torch.cuda.empty_cache()
         trainer.predicting(args.outputmodel,args.train_json,"train_pred"+"_"+affix1+".txt")    
-    
+        clean_set(args.datadir+'res',"train_pred"+"_"+affix1+".txt")
     if args.is_pred_tst:
         torch.cuda.empty_cache()
         trainer.predicting(args.outputmodel,args.test_json,"test_pred"+"_"+affix1+".txt")    
-    
+        clean_set(args.datadir+'res',"test_pred"+"_"+affix1+".txt")
     affix2='bi' #默认c r
     if args.iscombine:
         if args.combine_model=='cross-encoder':
@@ -108,7 +113,7 @@ if __name__ == '__main__':
     parser.add_argument('--test_texts',type=str,default="test_texts.txt")
     parser.add_argument('--train_texts',type=str,default="train_texts.txt")
     # finetune args
-    parser.add_argument('--istrain',type=bool,default=True,
+    parser.add_argument('--istrain',type=int,default=1,
                         help="whether run finteune processing")
     parser.add_argument('-b', '--batch_size', type=int, default=4,
                         help='number of batch size for training')
@@ -127,14 +132,14 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=44,
                         help='random seed (default: 1)')
     #perdicting args
-    parser.add_argument('--is_pred_trn',type=bool,default=True,
+    parser.add_argument('--is_pred_trn',type=int,default=1,
                         help="Whether run predicting training dataset")
-    parser.add_argument('--is_pred_tst',type=bool,default=True,
+    parser.add_argument('--is_pred_tst',type=int,default=1,
                         help="Whether run predicting testing dataset")
     parser.add_argument('--top_k',type=int,default=10)
     parser.add_argument('--data_size',type=int,default=12)
     #combine part
-    parser.add_argument('--iscombine',type=bool,default=True,
+    parser.add_argument('--iscombine',type=int,default=1,
                         help="Whether run combine")
     parser.add_argument('--combine_model',type=str,default='cross-encoder')
     parser.add_argument('--combine_testdir',type=str,default="test_pred.txt")
@@ -142,11 +147,11 @@ if __name__ == '__main__':
     parser.add_argument('--combine_testout',type=str,default="test_combine_labels.txt")
     parser.add_argument('--combine_trainout',type=str,default="train_combine_labels.txt")
     #rank part
-    parser.add_argument('--is_rank_train',type=bool,default=True)
+    parser.add_argument('--is_rank_train',type=int,default=1,)
     parser.add_argument('--rank_model',type=str,default='cross-encoder/stsb-roberta-base')
     parser.add_argument('--rank_batch',type=int,default=128)
     parser.add_argument('--rankmodel_save',type=str,default='cr_en')
     parser.add_argument('--rank_textdir',type=str,default='train_texts.txt')
-    parser.add_argument('--is_ranking',type=bool,default=True)
+    parser.add_argument('--is_ranking',type=int,default=1)
     args = parser.parse_args()
     run(args)

@@ -11,11 +11,12 @@ def rank(dir,text_dir,pred_combine_dir,model_dir,outputdir=None)-> List[List[str
     text_dir=dir+text_dir
     pred_combine_dir=os.path.join(dir,'res',pred_combine_dir)
     model_dir=dir+model_dir
-    outputdir = dir+outputdir
+    outputdir = os.path.join(dir,'res',outputdir)
     print('rank processing:'+'\n')
     print('text_dir: '+text_dir)
     print('pred_combine_dir: '+pred_combine_dir)
     print('rank_model_dir: '+model_dir)
+    print('outputdir:', outputdir)
     model = CrossEncoder(model_dir)
     pred_label_list=[]
     text_list=[]

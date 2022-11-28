@@ -141,7 +141,7 @@ class modeltrainer(object):
         src_dataname = os.path.join(self.datadir,src_dataname)
         print('src_data: '+src_dataname)
         #this tokenizer is not the self.tokenizer
-        if (self.affix=='ba'):
+        if (self.affix=='ba'or self.affix=='bal'):
             model = BartForConditionalGeneration.from_pretrained(modelname).to(self.device)
             tokenizer = BartTokenizerFast.from_pretrained(modelname)
             tokenizer.save_pretrained(self.datadir+"bart_tokenizer")
@@ -151,7 +151,7 @@ class modeltrainer(object):
             tokenizer = PegasusTokenizerFast.from_pretrained(modelname)
             tokenizer.save_pretrained(self.datadir+"pegasus_tokenizer")
             tokenizer.save_vocabulary(self.datadir+"pegasus_tokenizer")
-        elif (self.affix=='t5'):
+        elif (self.affix=='t5'or self.affix=='t5l'):
             model = T5ForConditionalGeneration.from_pretrained(modelname).to(self.device)
             tokenizer = T5TokenizerFast.from_pretrained(modelname)
             tokenizer.save_pretrained(self.datadir+"t5_tokenizer")

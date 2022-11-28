@@ -496,9 +496,10 @@ def clean_set(datadir,filepath):
     with open(filepath, 'r+') as f:
         for row in f:
             label_list = row.strip('\n').split(", ")
-            s_labels = set()
+            s_labels = []
             for i in label_list:                
-                s_labels.add(i)
+                if i not in s_labels:
+                    s_labels.append(i)
             res.append(list(s_labels))
     with open(filepath,'w+') as w:
         for i in res:
