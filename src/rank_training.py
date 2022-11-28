@@ -5,8 +5,10 @@
 # from nltk.stem.porter import *
 # from nltk.stem.snowball import SnowballStemmer
 # from nltk.tokenize import word_tokenize  
+import datetime
 import os
 import re
+import time
 from sentence_transformers import SentenceTransformer, InputExample, losses
 
 from sentence_transformers.cross_encoder import CrossEncoder
@@ -22,7 +24,7 @@ from utils.detector import log
 
 # stemmer = SnowballStemmer("english")
 # stemmer2 = SnowballStemmer("english", ignore_stopwords=True)
-def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_save_dir):    
+def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_save_dir,batch_size):    
     fine_tune_list = []
     raw_text_list = []
     label_list=[]
@@ -72,10 +74,13 @@ def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_s
             fb.write("\n")    
     #print('file complete')
     num_epoch = 4
+    start = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    print('train start:',start)
+    time_stap1 = time.process_time()
     # cross-encoder
     if re.match('\w*cross-encoder\w*',model_name,re.I):
         model = CrossEncoder(model_name, num_labels=1)
-        train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=24)
+        train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=batch_size)
         # shuffle=True
         print("batch_size="+ "24")
         # Configure the training
@@ -92,7 +97,7 @@ def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_s
     else:
         model = SentenceTransformer(model_name)
         #model = SentenceTransformer('all-MiniLM-L6-v2')
-        train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=128)
+        train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=batch_size)
         train_loss = losses.CosineSimilarityLoss(model)
         shuffle=True
         #print("batch_size="+ "24")
@@ -107,7 +112,16 @@ def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_s
                 #用curr
                 output_path=model_save_dir)
         model.save(model_save_dir)
-        
+        time_stap2 = time.process_time()
+        end =  datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        print('tarin end:', end)
+        print('tarining cost time:'+ str((time_stap2-time_stap1)/60/60 )+"hours.")
+        with open(os.path.join(dir,"train_log.txt"),'a+')as w: 
+            w.write("datadir:"+dir+", "+"model_name: "+model_name+", "+"batch_size: "+str(batch_size)+"epoch: "+str(num_epoch)+"\n"
+                +", "+"output: "+model_save_dir+"\n")
+            w.write("starttime:"+start+". "+'\n')
+            w.write('timecost:'+str((time_stap2-time_stap1)/60/60 )+"hours.\n")
+            w.write("endtime: "+end+"\n")
     
 #rank_train('./dataset/EUR-Lex/',"train_texts.txt","generate_result/train_pred.txt","train_labels.txt","cr_en")
 

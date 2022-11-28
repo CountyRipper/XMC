@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+import datetime,time
 import os
 import re
 
@@ -47,13 +48,19 @@ def run(args:ArgumentParser):
         affix1 = 'kb'
     args.affix1=affix1
     print(args)
-    
+    start = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    time_stap0 = time.process_time()
     trainer = modeltrainer(args)
+    model_time1 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    time_stap1 = time.process_time()
+    
     #define affix
     if args.istrain:
         #run finetune
         torch.cuda.empty_cache()
         trainer.train()   
+        model_time2 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        time_stap2 = time.process_time()
     
     #args.top_k = 10
     #args.data_size = 14
@@ -61,10 +68,14 @@ def run(args:ArgumentParser):
         torch.cuda.empty_cache()
         trainer.predicting(args.outputmodel,args.train_json,"train_pred"+"_"+affix1+".txt")    
         clean_set(args.datadir+'res',"train_pred"+"_"+affix1+".txt")
+        model_time3 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        time_stap3 = time.process_time()
     if args.is_pred_tst:
         torch.cuda.empty_cache()
         trainer.predicting(args.outputmodel,args.test_json,"test_pred"+"_"+affix1+".txt")    
         clean_set(args.datadir+'res',"test_pred"+"_"+affix1+".txt")
+        model_time4 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        time_stap4 = time.process_time()
     affix2='bi' #默认c r
     if args.iscombine:
         if args.combine_model=='cross-encoder':
@@ -83,7 +94,8 @@ def run(args:ArgumentParser):
             if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
                 get_combine_bi_list(args.datadir,"test_pred"+"_"+affix1+".txt",
                                     args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt    
-    
+        model_time5 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        time_stap5 = time.process_time()
     #args.rank_model = "all-MiniLM-L6-v2"
     #args.rank_model = ""
     affix3 = 'cr'
@@ -93,12 +105,30 @@ def run(args:ArgumentParser):
     
     if args.is_rank_train:
         rank_train(args.datadir,args.rank_model,args.train_texts,"train_combine_labels_"+affix1+affix2+".txt",args.train_labels,args.rankmodel_save)
-    
+        model_time6 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        time_stap6 = time.process_time()
     if args.is_ranking :
         if affix3 =='cr':
             rank(args.datadir,args.test_texts,"test_combine_labels_"+affix1+affix2+".txt",args.rankmodel_save,"test_ranked_labels_"+affix1+affix2+affix3+".txt")
         else:
             rank_bi(args.datadir,args.test_texts,"test_combine_labels_"+affix1+affix2+".txt",args.model_save,"test_ranked_labels_"+affix1+affix2+affix3+".txt")
+        model_time7 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        time_stap7 = time.process_time()
+    with open('./log/run_time.txt','a+') as w:
+        if model_time1:
+            w.write('start:'+model_time1+'\n')
+        if model_time2:
+            w.write('text2text model train endtime:'+model_time2+'\n')
+        if model_time3:
+            w.write('pre_trn endtime:'+model_time3+'\n')
+        if model_time4:
+            w.write('pre_tst endtime:'+model_time4+'\n')
+        if model_time5:
+            w.write('combine endtime:'+model_time5+'\n')
+        if model_time6:
+            w.write('rank model train endtime:'+model_time6+'\n')
+        if model_time7:
+            w.write('ranking endtime:'+model_time7+'\n')
     p_at_k(args.datadir,args.test_labels,"test_ranked_labels_"+affix1+affix2+affix3+".txt",args.datadir+"res_"+affix1+affix2+affix3+".txt")    
 
 if __name__ == '__main__':

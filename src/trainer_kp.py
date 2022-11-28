@@ -49,10 +49,10 @@ class modeltrainer(object):
             self.tokenizer = BartTokenizerFast.from_pretrained(pretrained_model_name_or_path="facebook/bart-base",cache_dir='./models')
         elif self.modelname=='pegasus' or self.modelname=='Pegasus':
             self.model = PegasusForConditionalGeneration.from_pretrained('google/pegasus-large',cache_dir='./models').to(self.device)
-            self.tokenizer = PegasusTokenizerFast.from_pretrained(pretrained_model_name_or_path="facebook/bart-large",cache_dir='./models')
+            self.tokenizer = PegasusTokenizerFast.from_pretrained(pretrained_model_name_or_path="google/pegasus-large",cache_dir='./models')
         elif self.modelname=='pegasus-xsum' or self.modelname=='Pegasus-xsum':
             self.model = PegasusForConditionalGeneration.from_pretrained('google/pegasus-xsum',cache_dir='./models').to(self.device)
-            self.tokenizer = PegasusTokenizerFast.from_pretrained(pretrained_model_name_or_path="facebook/bart-large",cache_dir='./models')
+            self.tokenizer = PegasusTokenizerFast.from_pretrained(pretrained_model_name_or_path="google/pegasus-xsum",cache_dir='./models')
         elif self.modelname=='t5' or self.modelname=='T5':
             self.model = T5ForConditionalGeneration.from_pretrained("google/t5-v1_1-base",cache_dir='./models').to(self.device)
             self.tokenizer = T5TokenizerFast.from_pretrained("google/t5-v1_1-base",cache_dir='./models')
