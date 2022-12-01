@@ -504,5 +504,9 @@ def clean_set(datadir,filepath):
     with open(filepath,'w+') as w:
         for i in res:
             w.write(", ".join(i)+"\n")
-            
-    
+
+def save_time(mytime:str,outputdir,tag=None):
+    if outputdir is not None:
+        with open(outputdir,'a+') as w :
+            w.write(tag+": "+mytime+'\n')
+    print(tag,": ",mytime)    

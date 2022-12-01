@@ -82,7 +82,7 @@ def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_s
         model = CrossEncoder(model_name, num_labels=1)
         train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=batch_size)
         # shuffle=True
-        print("batch_size="+ "24")
+        print("batch_size=",batch_size)
         # Configure the training
         warmup_steps = math.ceil(len(train_dataloader) * num_epoch * 0.1) #10% of train data for warm-up
         #logger.info("Warmup-steps: {}".format(warmup_steps))
@@ -126,7 +126,7 @@ def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_s
 #rank_train('./dataset/EUR-Lex/',"train_texts.txt","generate_result/train_pred.txt","train_labels.txt","cr_en")
 
 @log
-def rank_train_BI(dir,text_data,train_pred_data,train_label_data,model_save_dir):
+def rank_train_BI(dir,text_data,train_pred_data,train_label_data,model_save_dir,batch_size):
     fine_tune_list = []
     raw_text_list = []
     label_list=[]
@@ -170,7 +170,7 @@ def rank_train_BI(dir,text_data,train_pred_data,train_label_data,model_save_dir)
     #print('file complete')
     num_epoch = 5
     model = SentenceTransformer('all-MiniLM-L6-v2')
-    train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=128)
+    train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=batch_size)
     train_loss = losses.CosineSimilarityLoss(model)
     shuffle=True
     #print("batch_size="+ "24")
