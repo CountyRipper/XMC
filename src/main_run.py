@@ -8,7 +8,7 @@ from combine import get_combine_bi_list, get_combine_list
 from utils.premethod import clean_set, save_time
 from rank import rank_bi,rank
 from rank_training import rank_train
-
+from rank_model import Rank_model
 from trainer_kp import modeltrainer
 from utils.p_at_1 import p_at_k
 
@@ -94,13 +94,17 @@ def run(args:ArgumentParser):
         model_time5 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         time_stap5 = time.process_time()
         save_time(model_time5,args.datadir+'timelog.txt','combine end')
+    
+    #rank
+    rank_model = Rank_model()
+    
     #args.rank_model = "all-MiniLM-L6-v2"
     #args.rank_model = ""
     affix3 = 'cr'
     if re.match("\w*cross-encoder\w*",args.rank_model,re.I):
         affix3 = 'cr'
     else: affix3 = 'bi' 
-    
+
     if args.is_rank_train:
         rank_train(args.datadir,args.rank_model,args.train_texts,"train_combine_labels_"+affix1+affix2+".txt",args.train_labels,args.rankmodel_save,args.rank_batch)
         model_time6 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -178,7 +182,7 @@ if __name__ == '__main__':
     parser.add_argument('--combine_testout',type=str,default="test_combine_labels.txt")
     parser.add_argument('--combine_trainout',type=str,default="train_combine_labels.txt")
     #rank part
-    parser.add_argument('--is_rank_train',type=int,default=1,)
+    parser.add_argument('--is_rank_train',type=int,default=1)
     parser.add_argument('--rank_model',type=str,default='cross-encoder/stsb-roberta-base')
     parser.add_argument('--rank_batch',type=int,default=128)
     parser.add_argument('--rankmodel_save',type=str,default='cr_en')
