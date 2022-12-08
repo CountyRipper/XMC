@@ -129,7 +129,7 @@ def run(args:ArgumentParser):
             w.write('rank model train endtime:'+model_time6+'\n')
         if model_time7:
             w.write('ranking endtime:'+model_time7+'\n')
-        w.write('end.','\n','\n')
+        w.write('end.'+'\n'+'\n')
     p_at_k(args.datadir,args.test_labels,"test_ranked_labels_"+affix1+affix2+affix3+".txt",args.datadir+"res_"+affix1+affix2+affix3+".txt")    
 
 if __name__ == '__main__':

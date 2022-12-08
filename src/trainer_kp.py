@@ -4,7 +4,7 @@ import torch
 from tqdm import tqdm
 from transformers import (AutoTokenizer,BartTokenizerFast, BartForConditionalGeneration,Seq2SeqTrainer, 
                           Seq2SeqTrainingArguments,PegasusForConditionalGeneration, PegasusTokenizerFast,
-                          T5ForConditionalGeneration,T5TokenizerFast,AutoModelForSeq2SeqLM)
+                          PegasusTokenizer,T5ForConditionalGeneration,T5TokenizerFast,AutoModelForSeq2SeqLM)
 import time,datetime
 from torch.utils.data import DataLoader
 class MyData(torch.utils.data.Dataset):

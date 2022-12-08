@@ -1,25 +1,20 @@
 #from premethod import *
 #from cluster import *
+import json
 import re
-from utils.premethod import label_index_to_label_raw,txt_to_json
+from utils.premethod import get_all_stemlabels, label_index_to_label_raw, split_jsonfile, split_txt,txt_to_json
 from tqdm import tqdm
-datadir = ['./dataset/EUR-Lex/','./dataset/Wiki500K/','./dataset/AmazonCat-13K/','./dataset/AmazonCat-13K-10/','./dataset/Wiki10-31K/']
+datadir = ['./dataset/EUR-Lex/','./dataset/Wiki500K/','./dataset/AmazonCat-13K/','./dataset/AmazonCat-13K-10/','./dataset/Wiki10-31K/','./dataset/Wiki500K-10/']
 # k_fold = [1,2,3,4,5]
 labels_list=[]
-with open(datadir[1]+"res/test_combine_labels_pegabi.txt",'r+') as r:
-    for i in r:
-        labels_list.append(i.rstrip('\n').split(', '))
-count=0
-for i in range(len(labels_list)):
-
-    tmp = []
-    for j in labels_list[i]:
-        if j not in tmp:
-            tmp.append(j)
-        else:
-            count=count+1
-    labels_list[i] = list(tmp)
-print('count',count)
+js=[]
+#split_jsonfile(datadir[1]+"test_finetune.json",datadir[1]+"test_finetune10.json")
+#split_jsonfile(datadir[1]+"train_finetune.json",datadir[1]+"train_finetune10.json")
+# split_txt(datadir[1]+"train_labels.txt",datadir[1]+"train_labels10.txt")    
+# split_txt(datadir[1]+"train_texts.txt",datadir[1]+"train_texts10.txt")  
+# split_txt(datadir[1]+"test_labels.txt",datadir[1]+"test_labels10.txt")  
+# split_txt(datadir[1]+"test_texts.txt",datadir[1]+"test_texts10.txt")  
+get_all_stemlabels(datadir[5]+"all_labels.txt",datadir[5]+"train_labels.txt",datadir[5]+"test_labels.txt")    
 # with open(datadir[1]+"res/test_combine_labels_pegabi1.txt",'w+') as w:
 #     for i in labels_list:
 #         w.write(", ".join(i))

@@ -185,14 +185,15 @@ def json_to_text(file_name):
 get all label_stem
 获取全部词干化的单词
 '''
-def get_all_stemlabels(datadir,outputdir=None)-> List[str]:
+def get_all_stemlabels(outputdir=None,*datadir)-> List[str]:
     #理论上应该是test+train+valid所有的stem_labels文件合并在一起
     print('get_all_stemlabels:begin()')
     res = set()
-    with open(datadir,'r+') as file:
-        for i in tqdm(file):
-            # row 是标签
-            res.add(i)
+    for i in datadir:
+        with open(i,'r+') as file:
+            for i in tqdm(file):
+                # row 是标签
+                res.add(i)
     if outputdir:
         with open(outputdir,'w+') as w:
             for i in res:
@@ -363,6 +364,21 @@ def k_fold_split(dir,outputdir,k:int = 5):
         with open(cur_dir+"test_labels_stem.txt",'w+') as w:
             for i in test_l:
                 w.write(i)
+
+def split_txt(data_dir,output_dir,k =10):
+    logger.info("split_file:")
+    logger.info("data_dir: "+data_dir)
+    logger.info("output_dir: "+output_dir)
+    res=[]
+    with open(data_dir,'r+') as f:
+        for ind,row in enumerate(tqdm(f)):
+            if ind%k==0:
+                res.append(row)
+    with open(output_dir,'w+') as w:
+        for j in tqdm(res):
+            w.write(j)
+    logger.info("split "+data_dir+" end.")
+    
 @log
 def split_jsonfile(data_dir,output_dir,k =10):
     # 切分 json文件
