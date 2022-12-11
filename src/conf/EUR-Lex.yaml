@@ -1,4 +1,4 @@
-datadir: "./dataset/EURLex-4K/"
+datadir: "./dataset/EUR-Lex/"
 text2text:
   istrain: True
   model_name: "pegasus"

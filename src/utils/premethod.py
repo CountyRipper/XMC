@@ -4,18 +4,18 @@ import logging
 import os
 from typing import List
 from tqdm import tqdm
-import nltk
-from nltk.stem import *
-from nltk.stem.porter import *
-from nltk.stem.snowball import SnowballStemmer
+#import nltk
+#from nltk.stem import *
+#from nltk.stem.porter import *
+#from nltk.stem.snowball import SnowballStemmer
 import torch
 import xml.etree.ElementTree as ET
 from torch.utils.data import Dataset
 from utils.detector import log
 #from xclib.data import data_utils  
-nltk.download('stopwords')
+#nltk.download('stopwords')
 #stemmer = SnowballStemmer("english")
-stemmer2 = SnowballStemmer("english", ignore_stopwords=True)
+#stemmer2 = SnowballStemmer("english", ignore_stopwords=True)
 logging.basicConfig(level = logging.INFO,format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -74,26 +74,26 @@ def merge_each_label(data_name,outputname=None)-> List[str]:
     template: beef market_support france award_of_contract aid_to_disadvantaged_groups
     如果已经是aid_to_disadvantag_group这种合并类型，不要再使用merge_label
     """
-def stem_labels(data_name,outputname=None)->List[str]:
-    # pay more attention, data_name should be merged
-    stem_result=[] # two dimension set. each record-> one stemed word sets;
-    with open(data_name+".txt","r+") as label_set:
-        for row in tqdm(label_set):
-            row =row.strip()
-            word_array = row.split(" ") # each unstemed words array in each row
-            stem_label_result=[]
-            for each_label in word_array:
-                word_list = []  #存储每一个标签切分之后的临时数组
-                for each_word in each_label.split("_"): #词组形式用“_”切分
-                    word_list.append(stemmer2.stem(each_word))
-                stem_label_result.append(" ".join(word_list)) #将每一个词干化好的标签添加到结果数组
-            stem_result.append(", ".join(stem_label_result))   
-        if outputname: #如果需要输出文件
-            with open(outputname+".txt","w", encoding='utf8') as f:
-                for i in stem_result:
-                    f.write(str(i)+"\n")
-        return stem_labels  
-
+#def stem_labels(data_name,outputname=None)->List[str]:
+#    # pay more attention, data_name should be merged
+#    stem_result=[] # two dimension set. each record-> one stemed word sets;
+#    with open(data_name+".txt","r+") as label_set:
+#        for row in tqdm(label_set):
+#            row =row.strip()
+#            word_array = row.split(" ") # each unstemed words array in each row
+#            stem_label_result=[]
+#            for each_label in word_array:
+#                word_list = []  #存储每一个标签切分之后的临时数组
+#                for each_word in each_label.split("_"): #词组形式用“_”切分
+#                    word_list.append(stemmer2.stem(each_word))
+#                stem_label_result.append(" ".join(word_list)) #将每一个词干化好的标签添加到结果数组
+#            stem_result.append(", ".join(stem_label_result))   
+#        if outputname: #如果需要输出文件
+#            with open(outputname+".txt","w", encoding='utf8') as f:
+#                for i in stem_result:
+#                    f.write(str(i)+"\n")
+#        return stem_labels  
+#
 '''
 input : label_index, all_label
 output : raw_label
@@ -526,3 +526,10 @@ def save_time(mytime:str,outputdir,tag=None):
         with open(outputdir,'a+') as w :
             w.write(tag+": "+mytime+'\n')
     print(tag,": ",mytime)    
+    
+def read_labels(datadir)->List:
+    print('datadir:', datadir)
+    res = []
+    with open(datadir,'r+') as r:
+        res = [row.strip().split(", ") for row in r]
+    return res
