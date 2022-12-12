@@ -52,7 +52,8 @@ def rank_train(args):
     trainer = pl.Trainer(
         max_epochs=hparams["epochs"],
         callbacks=[early_stop_callback],
-        gpus=1
+        gpus=1,
+        default_root_dir=os.path.join(paras['datadir'],'rank_c')
         )
     trainer.fit(model,train_dataloaders=train_dataloader,
                 val_dataloaders=valid_dataloader)
@@ -72,7 +73,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size',type=int,default=6)
     parser.add_argument('--max_epochs',type=int,default=6)
     parser.add_argument('--num_training_samples',type=int,default=0)
-    parser.add_argument('--learning_rate',type=float,default=1)
+    parser.add_argument('--learning_rate',type=float,default=1e-2)
     
     args = parser.parse_args()
     rank_train(args)

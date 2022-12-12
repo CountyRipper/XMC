@@ -134,8 +134,8 @@ class Rank_model(pl.LightningModule):
         #embed_weights = self.embed(candidates) # N, sampled_size, H
         text_emb = text_emb.unsqueeze(-1)
         labels_outs=labels_outs.reshape(1,len(candidates['input_ids']),self.hidden_dim)
-        print("emb:", text_emb.size())
-        print('labels_outs:',labels_outs.size())
+        #print("emb:", text_emb.size())
+        #print('labels_outs:',labels_outs.size())
 
         logits = torch.bmm(labels_outs,text_emb).squeeze(-1)
         return logits
@@ -158,7 +158,7 @@ class Rank_model(pl.LightningModule):
     #
     def shared_step(self, batch):
         loss_s = []
-        loss_fn = torch.nn.BCEWithLogitsLoss()#定义loss函数
+        loss_fn = torch.nn.BCELoss()#定义loss函数
         for i in range(len(batch)):
             texts, gt_labels, combine_labels = batch[i]['text'],batch[i]['gt_labels'],batch[i]['combine_labels']
             #self应该输入 enconding之后的
