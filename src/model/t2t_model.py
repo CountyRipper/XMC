@@ -11,11 +11,16 @@ from datasets import load_dataset
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 class MyData(torch.utils.data.Dataset):
     def __init__(self, encoding, labels):
-        self.encoding = encoding
-        self.labels= labels
+        self.ids = encoding['input_ids']
+        self.mask = encoding['attention_mask']
+        self.labels= labels['input_ids']
     def __getitem__(self, idx):
-      item={key: torch.tensor(val[idx]).to(device) for key, val in self.encoding.items()}
-      item['labels'] = torch.tensor(self.labels['input_ids'][idx]).to(device)
+      item={}
+      item['input_ids'] = torch.tensor(self.ids[idx]).to(device)
+      item['attention_mask'] = torch.tensor(self.mask[idx]).to(device)
+      item['labels'] = torch.tensor(self.labels[idx]).to(device)
+      #item={'input_ids': torch.tensor(val[idx]).to(device) for key, val in self.encoding.items()}
+      #item['labels'] = torch.tensor(self.labels['input_ids'][idx]).to(device)
       return item
     def __len__(self):
         return len(self.labels)  # len(self.labels)
@@ -50,7 +55,7 @@ class GenerationModel(pl.LightningModule):
     encoder_input_ids, encoder_attention_mask,labels = torch.stack([i['input_ids'] for i in batch ]),torch.stack([i['attention_mask'] for i in batch ]),torch.stack([i['labels'] for i in batch ])
     res = self(encoder_input_ids,labels)
     #loss = self.custom_loss(logits, labels) custom loss
-    self.log('train_loss', res.loss, prog_bar=True)
+    self.log('train_loss', res.loss, prog_bar=True,batch_size=self.hparameters['batch_size'])
     return res.loss
 
   def validation_step(self, batch, batch_idx):
@@ -59,7 +64,7 @@ class GenerationModel(pl.LightningModule):
     res = self(encoder_input_ids,labels)
     #loss, logits = self(encoder_input_ids,labels)
 
-    self.log('val_loss', res.loss, prog_bar=True)
+    self.log('val_loss', res.loss, prog_bar=True,batch_size=self.hparameters['batch_size'])
     return res.loss
 
   def configure_optimizers(self):
@@ -95,20 +100,20 @@ class GenerationModel(pl.LightningModule):
 hparams = {
     'max_epochs': 5,
     'batch_size': 2,
-    'learning_rate': 2e-5,
+    'learning_rate': 3e-4,
     'train_dir': "./dataset/EUR-Lex/train_finetune.json",
     'val_dir': "./dataset/EUR-Lex/test_finetune.json",
     'data_dir': "./dataset/EUR-Lex/",
-    'model': 'bart'
+    'model': 't5'
 }
 
 early_stopping = EarlyStopping(monitor='val_loss', patience=3, mode='min')
 
 model = GenerationModel(hparams)
-logger = TensorBoardLogger(save_dir=os.path.join(hparams['data_dir'],'rank'),name='rank_log')
+logger = TensorBoardLogger(save_dir=os.path.join(hparams['data_dir'],'t2t'),name=hparams['model']+'_log')
 
 trainer = pl.Trainer(max_epochs=10, callbacks=[early_stopping], logger=logger,
-                     default_root_dir=os.path.join(hparams['data_dir'],'rank_c'),
+                     default_root_dir=os.path.join(hparams['data_dir'],hparams['model']+'_save'),
                      #auto_lr_find=True,
                      accelerator="gpu", devices=1)
 trainer.fit(model,train_dataloaders=model.train_dataloader(),

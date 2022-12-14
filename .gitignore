@@ -144,3 +144,4 @@ runs*
 .vscode
 *log
 ._NVIDIA-Linux-x86_64-525.60.11.run
+*wandb

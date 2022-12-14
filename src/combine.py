@@ -4,11 +4,34 @@ from typing import List
 from sentence_transformers import CrossEncoder
 from sentence_transformers import SentenceTransformer, util
 import torch
-
+from simcse import SimCSE
 from utils.detector import log
 model_c = CrossEncoder('cross-encoder/stsb-roberta-base',device='cuda')
 model_b = SentenceTransformer('all-MiniLM-L6-v2',device='cuda')
+model_s = SimCSE("princeton-nlp/sup-simcse-bert-base-uncased",device='cuda')
 from tqdm import tqdm
+
+
+def get_combine_list_sim(data_dir,pred_data,reference_data,outputdir=None)-> List[List[str]]:
+    pred_data = os.path.join(data_dir,'res',pred_data)
+    reference_data = os.path.join(data_dir,reference_data)
+    print('pred_data: '+pred_data)
+    print('reference:'+reference_data)
+    outputdir=os.path.join(data_dir,'res',outputdir)
+    print('data_dir: '+data_dir)
+    print('write into: '+outputdir)
+    print('model_name: simcse')
+    all_labels= []
+    pre_labels = []
+    with open(reference_data,'r+') as f:
+        for row in f:
+            all_labels.append(row.strip())
+    with open(pred_data,'r+') as f:
+        for row in f:
+            pre_labels.append(row.rstrip().rstrip(',').split(", "))
+    
+    
+
 '''
 input : 数据集目录，预测出来的标签数据，参考标签数据
 output: 输出替换标签

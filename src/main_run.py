@@ -8,7 +8,7 @@ from combine import get_combine_bi_list, get_combine_list
 from utils.premethod import clean_set, save_time
 from rank import rank_bi,rank
 from rank_training import rank_train
-from rank_model import Rank_model
+from model.rank_model import Rank_model
 from trainer_kp import modeltrainer
 from utils.p_at_1 import p_at_k
 
@@ -96,7 +96,7 @@ def run(args:ArgumentParser):
         save_time(model_time5,args.datadir+'timelog.txt','combine end')
     
     #rank
-    rank_model = Rank_model()
+    #rank_model = Rank_model()
     
     #args.rank_model = "all-MiniLM-L6-v2"
     #args.rank_model = ""
