@@ -6,7 +6,8 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from datasets import load_dataset
 from utils.premethod import read_labels
-from pytorch_lightning.callbacks import EarlyStopping
+from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.callbacks import EarlyStopping,ModelCheckpoint,LearningRateMonitor
 hparams = {
     "batch_size": 16,
     "learning_rate": 1e-3,
@@ -36,12 +37,13 @@ def rank_train(args):
     train_combine_labels = read_labels("./dataset/EUR-Lex/res/train_combine_labels_t5lbi.txt")
     valid_combine_labels = read_labels("./dataset/EUR-Lex/res/test_combine_labels_t5lbi.txt")
     
-    rd_train = rankdata(train_texts,train_labels,train_combine_labels)
-    rd_valid = rankdata(valid_texts,valid_labels,valid_combine_labels)
-    train_dataloader = DataLoader(rd_train,batch_size=4,collate_fn=lambda x: x,shuffle=True)
-    valid_dataloader = DataLoader(rd_valid,batch_size=4,collate_fn=lambda x: x,shuffle=True)
+    rd_train = rankdata(train_texts,train_combine_labels,train_labels)
+    rd_valid = rankdata(valid_texts,valid_combine_labels,valid_labels)
+    train_dataloader = DataLoader(rd_train,batch_size=8,collate_fn=lambda x: x,shuffle=True)
+    valid_dataloader = DataLoader(rd_valid,batch_size=8,collate_fn=lambda x: x,shuffle=True)
     args.num_training_samples = len(train_dataloader)
     model = Rank_model(args).to('cuda')
+    logger = TensorBoardLogger('./log/rank_log', name='my_rank')
     early_stop_callback = EarlyStopping(
         monitor="val_loss",
         min_delta=0.00,
@@ -49,11 +51,17 @@ def rank_train(args):
         verbose=True,
         mode="min",
         )
+    checkpoint_callback = ModelCheckpoint(
+        dirpath='./log/rank_check',
+        filename='{epoch}-{val_loss:.2f}-{other_metric:.2f}'
+    )
+    lr_callback = LearningRateMonitor(logging_interval="step")
     trainer = pl.Trainer(
         max_epochs=hparams["epochs"],
-        callbacks=[early_stop_callback],
+        callbacks=[early_stop_callback,checkpoint_callback,lr_callback],
         gpus=1,
-        default_root_dir=os.path.join(paras['datadir'],'rank_c')
+        default_root_dir=os.path.join(paras['datadir'],'rank_c'),auto_lr_find=True,
+        logger=logger
         )
     trainer.fit(model,train_dataloaders=train_dataloader,
                 val_dataloaders=valid_dataloader)
@@ -73,7 +81,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size',type=int,default=6)
     parser.add_argument('--max_epochs',type=int,default=6)
     parser.add_argument('--num_training_samples',type=int,default=0)
-    parser.add_argument('--learning_rate',type=float,default=1e-2)
+    parser.add_argument('--learning_rate',type=float,default=1e-5)
     
     args = parser.parse_args()
     rank_train(args)

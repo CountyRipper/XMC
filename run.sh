@@ -1,3 +1,3 @@
 #! /bin/zsh
 #conda activate ddd
-nohup python -u ./src/main_run.py --datadir='./dataset/Wiki500K-10/' --istrain=0 --is_pred_trn=0 --is_pred_tst=0 --iscombine=0 --is_rank_train=1 --is_ranking=1 --combine_model='bi-encoder' --modelname='t5-large' --outputmodel='t5l_save' --batch_size=2 --epoch=5 --checkdir='t5l_check' --data_size=4 --combine_model='cross-encoder' --rank_model='cross-encoder/stsb-distilroberta-base' --rank_batch=24 --rankmodel_save='cr_en'>> ./log/output.log 2>&1 &
+nohup python -u ./src/main_run.py --datadir='./dataset/Wiki10-31K/' --istrain=0 --is_pred_trn=0 --is_pred_tst=0 --iscombine=1 --is_rank_train=1 --is_ranking=1 --combine_model='' --modelname='t5-large' --outputmodel='t5l_save' --batch_size=1 --epoch=5 --checkdir='t5l_check' --data_size=4  --rank_model='all-MiniLM-L6-v2' --rank_batch=64 --rankmodel_save='bi_en_t5l'>> ./log/output.log 2>&1 &

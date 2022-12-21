@@ -11,7 +11,7 @@ from tqdm import tqdm
 import torch
 import xml.etree.ElementTree as ET
 from torch.utils.data import Dataset
-from utils.detector import log
+#from detector import log
 #from xclib.data import data_utils  
 #nltk.download('stopwords')
 #stemmer = SnowballStemmer("english")
@@ -37,7 +37,7 @@ def get_all_labels(data_name,outputname=None)-> List[str]:
         for row in label_set:
             for j in row.split(', '):
                 res.write(j+"\n")
-@log                
+                
 def get_all_labels_allfile(datas,outputname=None)-> List[str]:
     #获取多个文件的所有labels，并且去重
     label_set=set()
@@ -379,7 +379,7 @@ def split_txt(data_dir,output_dir,k =10):
             w.write(j)
     logger.info("split "+data_dir+" end.")
     
-@log
+
 def split_jsonfile(data_dir,output_dir,k =10):
     # 切分 json文件
     logger.info("split_file:")
@@ -532,4 +532,12 @@ def read_labels(datadir)->List:
     res = []
     with open(datadir,'r+') as r:
         res = [row.strip().split(", ") for row in r]
+    return res
+
+def read_texts(datadir)->List:
+    print('datadir:',datadir)
+    res=[]
+    with open(datadir,'r') as f:
+        for row in f:
+            res.append(row.strip())        
     return res

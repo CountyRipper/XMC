@@ -161,8 +161,40 @@ def get_combine_bi_list(data_dir,pred_data,reference_data,outputdir=None)-> List
         with open(outputdir,'w+')as w1:
             for row in pred_list:
                 w1.write(", ".join(row)+'\n')
-                
-            
+
+def combine_clean(data_dir,pred_data,reference_data,outputdir=None)-> List[List[str]]:              
+    pred_data = os.path.join(data_dir,'res',pred_data)
+    reference_data = os.path.join(data_dir,reference_data)
+    print('pred_data: '+pred_data)
+    print('reference:'+reference_data)
+    outputdir=os.path.join(data_dir,'res',outputdir)
+    print('data_dir: '+data_dir)
+    print('write into: '+outputdir)
+    pred_list=[]
+    all_label_list=[]
+    res = []
+    #no_in_count=[]
+    #全是已经词干化的label集合
+    #对应test_pregasus_pred.txt, all_labels.txt
+    with open(pred_data,'r+') as f1:
+        for i in f1:
+            pred_list.append(i.rstrip().rstrip(',').split(", "))
+    with open(reference_data,'r+') as f2:
+        for i in f2:
+            all_label_list.append(i.rstrip())
+    for i in range(len(pred_list)):
+        tmp=[]
+        for j in range(len(pred_list[i])):
+            if pred_list[i][j] in all_label_list:
+                tmp.append(pred_list[i][j])
+        res.append(tmp)
+    if outputdir:
+        print('write into: '+outputdir)
+        with open(outputdir,'w+')as w1:
+            for row in res:
+                w1.write(", ".join(row)+'\n')
+    
+                            
             
             
              

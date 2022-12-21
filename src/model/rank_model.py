@@ -1,5 +1,6 @@
 
 from functools import partial
+from pickletools import optimize
 import numpy as np
 import torch
 from torch import nn
@@ -8,6 +9,7 @@ from transformers import BertTokenizerFast, BertConfig, BertModel
 from transformers import RobertaModel, RobertaConfig, RobertaTokenizerFast
 from transformers import XLNetTokenizerFast, XLNetModel, XLNetConfig
 import pytorch_lightning as pl
+from matplotlib import pyplot as plt
 from tokenizers import BertWordPieceTokenizer
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -21,20 +23,34 @@ def fn(warmup_steps, step):
 def linear_warmup_decay(warmup_steps):
     return partial(fn, warmup_steps)
 
-class rankdata(torch.utils.data.Dataset):
-    def __init__(self,texts,gt_labels,combine_labels) -> None:
+class pred_data(torch.utils.data.Dataset):
+    def __init__(self,texts,combine_labels) :
         super().__init__()
         self.texts = texts
-        self.gt_labels = gt_labels
         self.combine_labels = combine_labels
     def __getitem__(self,index):
         item={}
         item['text'] = self.texts[index]
-        item['gt_labels'] = self.gt_labels[index]
         item['combine_labels'] = self.combine_labels[index]
         return item
     def __len__(self):
-        return len(self.gt_labels)
+        return len(self.texts)
+
+
+class rankdata(torch.utils.data.Dataset):
+    def __init__(self,texts,combine_labels,gt_labels=None) -> None:
+        super().__init__()
+        self.texts = texts
+        self.combine_labels = combine_labels
+        self.gt_labels = gt_labels
+    def __getitem__(self,index):
+        item={}
+        item['text'] = self.texts[index]
+        item['combine_labels'] = self.combine_labels[index]
+        item['gt_labels'] = self.gt_labels[index]
+        return item
+    def __len__(self):
+        return len(self.texts)
 
 
 class CosineWarmupScheduler(torch.optim.lr_scheduler._LRScheduler):
@@ -67,6 +83,7 @@ class Rank_model(pl.LightningModule):
         self.learning_rate = args.learning_rate
         self.tokenizer =self.get_tokenizer()
         self.bert = self.get_bert()
+        self.save_hyperparameters()
         self.hidden_dim = args.hidden_dim
         self.warmup_epochs = args.warmup_epochs
         self.max_epochs = args.max_epochs
@@ -75,6 +92,10 @@ class Rank_model(pl.LightningModule):
         #hiden bottleneck layer
         self.liner0 = nn.Linear(self.feature_layers*self.bert.config.hidden_size,args.hidden_dim)
         self.liner1 = nn.Linear(self.bert.config.hidden_size,args.hidden_dim)
+        self.loss_line = []
+        self.cur_batch = []
+        self.sum_loss = 0.0
+        self.mean_loss= 0.0
         #self.embed = nn.Embedding(args.labels_num, args.hidden_dim)
         #nn.init.xavier_uniform_(self.embed.weight)#初始化权重均匀分布
     def get_bert(self):
@@ -141,20 +162,23 @@ class Rank_model(pl.LightningModule):
         return logits
     
     def configure_optimizers(self):
+        
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        warmup_steps = self.train_iters_per_epoch * self.warmup_epochs
+        
+        return [optimizer]
+        # warmup_steps = self.train_iters_per_epoch * self.warmup_epochs
+        
+        # scheduler = {
+        #     "scheduler": torch.optim.lr_scheduler.LambdaLR(
+        #         optimizer,
+        #         linear_warmup_decay(warmup_steps),
+        #     ),
+        #     "interval": "step",
+        #     "frequency": 1,
+        # }
 
-        scheduler = {
-            "scheduler": torch.optim.lr_scheduler.LambdaLR(
-                optimizer,
-                linear_warmup_decay(warmup_steps),
-            ),
-            "interval": "step",
-            "frequency": 1,
-        }
-
-        return [optimizer], [scheduler]
-        return base_opt
+        # return [optimizer], [scheduler]
+        # return base_opt
     #
     def shared_step(self, batch):
         loss_s = []
@@ -167,8 +191,11 @@ class Rank_model(pl.LightningModule):
             candidates = self.tokenizer(combine_labels, padding=True,return_tensors='pt').to(self.device)
             logits = self(inputs['input_ids'],inputs['attention_mask'],inputs['token_type_ids']
                           ,candidates)
+            #print('logist:')
+            #print(logits[0])
             sig = torch.nn.Sigmoid()
             pre_scores = sig(logits).reshape(len(combine_labels))
+            #print(pre_scores)
             num = len(combine_labels)
             scores = torch.zeros(num).to(self.device)
             for i in range(num):
@@ -185,13 +212,25 @@ class Rank_model(pl.LightningModule):
     '''
     def training_step(self, batch, batch_idx):
         loss = self.shared_step(batch)
+        # self.loss_line.append(loss.item())
+        # self.cur_batch.append(batch_idx)
+        # plt.plot(self.cur_batch,self.loss_line)
+        # plt.show()
+        self.sum_loss=self.mean_loss*batch_idx+loss.item()
+        self.mean_loss = self.sum_loss/(batch_idx+1)
+        if(batch_idx%50==0):
+            with open("./log/rank.log",'a+') as f:
+                s1 = 'batch_idx: '+str(batch_idx)+' loss: {:.4f}'.format(self.mean_loss)+" lr: {:.4f}".format(self.learning_rate)+'\n'
+                f.write(s1)
+            print('loss:%f, lr:%f'%(self.mean_loss,self.learning_rate))
+        self.log("train_loss", loss, on_step=True,batch_size=len(batch),logger=True)
         return {'loss':loss,'lr':self.learning_rate}
     '''
     same as training_step + acc or loss
     '''
     def validation_step(self, batch, batch_idx):
         loss = self.shared_step(batch)
-        self.log("val_loss", loss, on_step=True,batch_size=len(batch))
+        self.log("val_loss", loss, on_step=True,batch_size=len(batch),logger=True)
     '''
     batch just contains combine labels, output 
     '''
@@ -200,11 +239,10 @@ class Rank_model(pl.LightningModule):
         #self应该输入 enconding之后的
         inputs = self.tokenizer(texts,padding=True,return_tensors='pt',truncation=True).to(self.device)
         candidates = self.tokenizer(combine_labels, padding=True,return_tensors='pt').to(self.device)
-        logits = self(inputs['input_ids'],inputs['attention_mask'],inputs['oken_type_ids']
+        logits = self(inputs['input_ids'],inputs['attention_mask'],inputs['token_type_ids']
                       ,candidates['input_ids'])
         pre_scores = torch.nn.Sigmoid(logits)
 
         return pre_scores
     
-
     

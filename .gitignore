@@ -128,7 +128,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-/data*
+dataset/*
 /cur*
 *Store
 # addr
@@ -142,6 +142,8 @@ test.py
 models
 runs*
 .vscode
-*log
-._NVIDIA-Linux-x86_64-525.60.11.run
+log/*
+._NVIDIA*
 *wandb
+*logs
+test*

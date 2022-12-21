@@ -4,7 +4,7 @@ import os
 import re
 
 import torch
-from combine import get_combine_bi_list, get_combine_list
+from combine import combine_clean, get_combine_bi_list, get_combine_list
 from utils.premethod import clean_set, save_time
 from rank import rank_bi,rank
 from rank_training import rank_train
@@ -83,7 +83,7 @@ def run(args:ArgumentParser):
             if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
                 get_combine_list(args.datadir,"test_pred"+"_"+affix1+affix2+".txt",
                                  args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt
-        else: # using bi
+        elif args.combine_model =='bi-encoder': # using bi
             affix2='bi'
             if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
                 get_combine_bi_list(args.datadir,"train_pred"+"_"+affix1+".txt",
@@ -91,10 +91,20 @@ def run(args:ArgumentParser):
             if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
                 get_combine_bi_list(args.datadir,"test_pred"+"_"+affix1+".txt",
                                     args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt    
+        else:
+            print('cl'+'\n')
+            affix2='cl'
+            if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
+                combine_clean(args.datadir,"train_pred"+"_"+affix1+".txt",
+                                    args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
+            if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
+                combine_clean(args.datadir,"test_pred"+"_"+affix1+".txt",
+                                    args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt
         model_time5 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         time_stap5 = time.process_time()
         save_time(model_time5,args.datadir+'timelog.txt','combine end')
     
+        
     #rank
     #rank_model = Rank_model()
     
