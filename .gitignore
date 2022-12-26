@@ -138,6 +138,7 @@ test.txt
 test.py
 *.idea
 *_save
+
 *.vscode
 models
 runs*
@@ -145,5 +146,4 @@ runs*
 log/*
 ._NVIDIA*
 *wandb
-*logs
 test*
