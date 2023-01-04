@@ -46,7 +46,7 @@ class modeltrainer(object):
             self.tokenizer = BartTokenizerFast.from_pretrained(pretrained_model_name_or_path="facebook/bart-large",cache_dir='./models')
         elif self.modelname=='bart' or self.modelname=='BART' or self.modelname=='Bart':
             self.model = BartForConditionalGeneration.from_pretrained("facebook/bart-base",cache_dir='./models').to(self.device)
-            self.tokenizer = BartTokenizer.from_pretrained(pretrained_model_name_or_path="facebook/bart-base",cache_dir='./models')
+            self.tokenizer = BartTokenizerFast.from_pretrained(pretrained_model_name_or_path="facebook/bart-base",cache_dir='./models')
         elif self.modelname=='pegasus' or self.modelname=='Pegasus' or self.modelname=='Pegasus-lrage'or self.modelname=='pegasus-large':
             self.model = PegasusForConditionalGeneration.from_pretrained('google/pegasus-large',cache_dir='./models').to(self.device)
             self.tokenizer = PegasusTokenizerFast.from_pretrained(pretrained_model_name_or_path="google/pegasus-large",cache_dir='./models')
