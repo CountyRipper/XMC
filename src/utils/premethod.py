@@ -1,13 +1,11 @@
+import datetime
 from logging import Logger
 import json
 import logging
 import os
 from typing import List
 from tqdm import tqdm
-#import nltk
-#from nltk.stem import *
-#from nltk.stem.porter import *
-#from nltk.stem.snowball import SnowballStemmer
+
 import torch
 import xml.etree.ElementTree as ET
 from torch.utils.data import Dataset
@@ -541,3 +539,79 @@ def read_texts(datadir)->List:
         for row in f:
             res.append(row.strip())        
     return res
+
+def get_recall_100(src_label_list,pred_label_list)->int:
+    print('get_recall_at_100')
+    sum_recall=0.0
+    res=0.0
+    if len(src_label_list)== len(pred_label_list):
+        for i in range(len(src_label_list)):
+            cur_recall=0
+            for item in pred_label_list[i]:
+                if item in src_label_list[i]:
+                    cur_recall+=1
+            sum_recall+= (cur_recall/len(src_label_list[i])) # get each all recall num
+        res = sum_recall/len(src_label_list)
+        print(f'recall@100= {res:>4f}\n')
+        return res
+    else: 
+        print('error, num recall_at_100')
+        return -1
+
+def p_at_k(dir, src_label_dir,pred_label_dir,outputdir=None)->list:
+    src_label_dir = dir+src_label_dir
+    pred_label_dir = os.path.join(dir,'res',pred_label_dir)
+    print("p_at_k:"+'\n')
+    print("src_label: "+src_label_dir)
+    print("pred_label: "+pred_label_dir)
+    p_at_1_count=0
+    p_at_3_count = 0
+    p_at_5_count = 0
+    src_label_list=read_labels(src_label_dir)
+    pred_label_list= read_labels(pred_label_dir)
+    optium_count=0.0
+    num1=len(src_label_list)
+    num2 = len(pred_label_list)
+    if num1!=num2:
+        print("num error")
+        return 
+    else:
+        recall_100 = get_recall_100(src_label_list,pred_label_list)
+        for i in range(num1):
+            p1=0 
+            p3=0
+            p5=0
+            for j in range(len(pred_label_list[i])):
+                if pred_label_list[i][j] in src_label_list[i]:
+                    if j<1:
+                        p1+=1
+                        p3+=1
+                        p5+=1
+                    if j>=1 and j <3:
+                        p3+=1
+                        p5+=1
+                    if j>=3 and j<5:
+                        p5+=1
+            p_at_1_count+=p1
+            p_at_3_count+=p3
+            p_at_5_count+=p5
+        p1 = p_at_1_count/len(pred_label_list)
+        p3 = p_at_3_count/ (3*len(pred_label_list))
+        p5 = p_at_5_count/ (5*len(pred_label_list))
+        print('p@1= '+str(p1))
+        print('p@3= '+str(p3))
+        print('p@5= '+str(p5))
+        print(f'recall@100 = {recall_100:>4f}')
+        if outputdir:
+            with open(outputdir,'a+')as w:
+                w.write("\n")
+                now_time = datetime.datetime.now()
+                time_str = now_time.strftime('%Y-%m-%d %H:%M:%S')
+                w.write("time: "+time_str+"\n")
+                w.write("src_label: "+src_label_dir+"\n")
+                w.write('pred_label: '+ pred_label_dir+"\n")
+                w.write("p@1="+str(p1)+"\n")
+                w.write("p@3="+str(p3)+"\n")
+                w.write("p@5="+str(p5)+"\n")
+                w.write(f"recall@100={recall_100:>4f}")
+        return [p1,p3,p5]    

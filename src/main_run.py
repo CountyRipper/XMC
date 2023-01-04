@@ -5,12 +5,12 @@ import re
 
 import torch
 from combine import combine_clean, get_combine_bi_list, get_combine_list
-from utils.premethod import clean_set, save_time
+from utils.premethod import clean_set, save_time, p_at_k
 from rank import rank_bi,rank
 from rank_training import rank_train
 from model.rank_model import Rank_model
 from trainer_kp import modeltrainer
-from utils.p_at_1 import p_at_k
+#from utils.p_at_1 import p_at_k
 
 def run(args:ArgumentParser):
     

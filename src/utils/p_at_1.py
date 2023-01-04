@@ -5,7 +5,8 @@ import nltk
 from nltk.stem import *
 from nltk.stem.porter import *
 from nltk.stem.snowball import SnowballStemmer
-from nltk.tokenize import word_tokenize  
+from nltk.tokenize import word_tokenize
+from premethod import get_recall_100  
 import datetime
 nltk.download('stopwords')
 
@@ -34,6 +35,7 @@ def p_at_k(dir, src_label_dir,pred_label_dir,outputdir=None)->list:
         print("num error")
         return 
     else:
+        recall_100 = get_recall_100(src_label_list,pred_label_list)
         for i in range(num1):
             p1=0 
             p3=0
@@ -58,6 +60,7 @@ def p_at_k(dir, src_label_dir,pred_label_dir,outputdir=None)->list:
         print('p@1= '+str(p1))
         print('p@3= '+str(p3))
         print('p@5= '+str(p5))
+        print(f'recall@100 = {recall_100:>4f}')
         if outputdir:
             with open(outputdir,'a+')as w:
                 w.write("\n")
@@ -69,7 +72,7 @@ def p_at_k(dir, src_label_dir,pred_label_dir,outputdir=None)->list:
                 w.write("p@1="+str(p1)+"\n")
                 w.write("p@3="+str(p3)+"\n")
                 w.write("p@5="+str(p5)+"\n")
-                
+                w.write(f"recall@100={recall_100:>4f}")
         return [p1,p3,p5]      
             
 # p_max = 0

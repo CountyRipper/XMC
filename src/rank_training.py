@@ -53,8 +53,8 @@ def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_s
         for each in pred_label_list[i]:
             label_len_list = len(label_list[i])
             if each in label_list[i]:
-                label_score = 0.5+0.5 *(label_len_list - label_list[i].index(each))/label_len_list
-                #label_score = 1
+                #label_score = 0.5+0.5 *(label_len_list - label_list[i].index(each))/label_len_list
+                label_score = 1.0
                 fine_tune_list.append(InputExample(texts=[raw_text_list[i].rstrip(), each], label=label_score))
                 label_score_list.append(str(i) + ' ' + each+ ' ' +str(label_score))
             else:
@@ -155,8 +155,8 @@ def rank_train_BI(dir,text_data,train_pred_data,train_label_data,model_save_dir,
         for each in pred_label_list[i]:
             label_len_list = len(label_list[i])
             if each in label_list[i]:
-                label_score = 0.5+0.5 *(label_len_list - label_list[i].index(each))/label_len_list
-                #label_score = 1.0
+                #label_score = 0.5+0.5 *(label_len_list - label_list[i].index(each))/label_len_list
+                label_score = 1.0
                 fine_tune_list.append(InputExample(texts=[raw_text_list[i].rstrip(), each], label=label_score))
                 label_score_list.append(str(i) + ' ' + each+ ' ' +str(label_score))
             else:

@@ -9,13 +9,13 @@ nohup python -u ./src/main_run.py --datadir='./dataset/Wiki10-31K/' \
 --is_rank_train=1  \
 --is_ranking=1 \
 --combine_model='bi-encoder' \
---modelname='t5' \
---outputmodel='t5_save' \
+--modelname='Pegasus' \
+--outputmodel='pegasus_save' \
 --batch_size=2 \
 --epoch=5 \
---checkdir='t5_check' \
+--checkdir='pega_check' \
 --data_size=4  \
 --rank_model='all-MiniLM-L6-v2' \
 --rank_batch=32 \
---rankmodel_save='bi_en_t5' \
+--rankmodel_save='bi_en_' \
 >> ./log/output.log 2>&1 &
