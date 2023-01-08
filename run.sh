@@ -12,10 +12,11 @@ nohup python -u ./src/main_run.py --datadir='./dataset/Wiki10-31K/' \
 --modelname='Pegasus' \
 --outputmodel='pegasus_save' \
 --batch_size=2 \
---epoch=5 \
+--t2t_epoch=5 \
 --checkdir='pega_check' \
 --data_size=4  \
 --rank_model='all-MiniLM-L6-v2' \
 --rank_batch=32 \
+--rank_epoch=4\
 --rankmodel_save='bi_en_' \
 >> ./log/output.log 2>&1 &

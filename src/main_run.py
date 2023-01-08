@@ -4,7 +4,7 @@ import os
 import re
 
 import torch
-from combine import combine_clean, get_combine_bi_list, get_combine_list
+from combine import combine_clean, get_combine_bi_list, get_combine_list, get_combine_simcse
 from utils.premethod import clean_set, save_time, p_at_k
 from rank import rank_bi,rank
 from rank_training import rank_train
@@ -91,6 +91,14 @@ def run(args:ArgumentParser):
             if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
                 get_combine_bi_list(args.datadir,"test_pred"+"_"+affix1+".txt",
                                     args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt    
+        elif args.combine_model =='simcse':
+            affix2 = 'sim'
+            if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
+                get_combine_simcse(args.datadir,"train_pred"+"_"+affix1+".txt",
+                                    args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
+            if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
+                get_combine_simcse(args.datadir,"test_pred"+"_"+affix1+".txt",
+                                    args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt    
         else:
             print('cl'+'\n')
             affix2='cl'
@@ -116,7 +124,7 @@ def run(args:ArgumentParser):
     else: affix3 = 'bi' 
 
     if args.is_rank_train:
-        rank_train(args.datadir,args.rank_model,args.train_texts,"train_combine_labels_"+affix1+affix2+".txt",args.train_labels,args.rankmodel_save,args.rank_batch)
+        rank_train(args.datadir,args.rank_model,args.train_texts,"train_combine_labels_"+affix1+affix2+".txt",args.train_labels,args.rankmodel_save,args.rank_batch,args.rank_epoch)
         model_time6 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         time_stap6 = time.process_time()
         save_time(model_time6,args.datadir+'timelog.txt','rank train end')
@@ -130,19 +138,26 @@ def run(args:ArgumentParser):
         save_time(model_time7,args.datadir+'timelog.txt','rank  end')
     with open('./log/run_time.txt','a+') as w:
         if model_time1:
-            w.write('start:'+model_time1+'\n')
+            w.write('start: '+model_time1+'\n')
+            w.write(f'datadir: {args.datadir}\n')
         if model_time2:
-            w.write('text2text model train endtime:'+model_time2+'\n')
+            w.write(f'text2text model: {args.modelname}, \
+                    batch_size: {args.batch_size}, epochs: {args.epoch}, lr: {args.t2t_lr}\n')
+            w.write('text2text model train endtime: '+model_time2+'\n')
         if model_time3:
-            w.write('pre_trn endtime:'+model_time3+'\n')
+            w.write('pre_trn endtime: '+model_time3+'\n')
         if model_time4:
-            w.write('pre_tst endtime:'+model_time4+'\n')
+            w.write('pre_tst endtime: '+model_time4+'\n')
         if model_time5:
-            w.write('combine endtime:'+model_time5+'\n')
+            w.write(f'combine model: {args.combine_model}\n')
+            w.write('combine endtime: '+model_time5+'\n')
         if model_time6:
-            w.write('rank model train endtime:'+model_time6+'\n')
+            w.write(f'rank model: {args.rank_model}, rank_batch: {args.rank_batch}, \
+                    rank_epoch: {args.rank_epoch} \n')
+            w.write('rank model train endtime: '+model_time6+'\n')
+            w.write(f'rank_save: {args.rankmodel_save} \n')
         if model_time7:
-            w.write('ranking endtime:'+model_time7+'\n')
+            w.write('ranking endtime: '+model_time7+'\n')
         w.write('end.'+'\n'+'\n')
     p_at_k(args.datadir,args.test_labels,"test_ranked_labels_"+affix1+affix2+affix3+".txt",args.datadir+"res_"+affix1+affix2+affix3+".txt")    
 
@@ -162,17 +177,17 @@ if __name__ == '__main__':
                         help="whether run finteune processing")
     parser.add_argument('-b', '--batch_size', type=int, default=4,
                         help='number of batch size for training')
-    parser.add_argument('-e', '--epoch', type=int, default=5,
+    parser.add_argument('-e', '--t2t_epoch', type=int, default=5,
                         help='number of epochs to train (default: 100)')
-    parser.add_argument('--modelname', type=str,default='pegasus',
+    parser.add_argument('--modelname', type=str,default='bart',
                         help='modelname ')
     parser.add_argument('--affix1',type=str,default="")
     parser.add_argument('--affix2',type=str,default="")
-    parser.add_argument('--checkdir', type=str, default='pegasus_check',
+    parser.add_argument('--checkdir', type=str, default='bart_check',
                         help='path to trained model to save')
-    parser.add_argument('--outputmodel',type=str,default='pegasus_save',
+    parser.add_argument('--outputmodel',type=str,default='bart_save',
                         help="fine-tune model save dir")
-    parser.add_argument('--lr', type=float, default=2e-5,
+    parser.add_argument('--t2t_lr', type=float, default=2e-5,
                         help='learning rate')
     parser.add_argument('--seed', type=int, default=44,
                         help='random seed (default: 1)')
@@ -186,16 +201,17 @@ if __name__ == '__main__':
     #combine part
     parser.add_argument('--iscombine',type=int,default=1,
                         help="Whether run combine")
-    parser.add_argument('--combine_model',type=str,default='cross-encoder')
+    parser.add_argument('--combine_model',type=str,default='bi-encoder')
     parser.add_argument('--combine_testdir',type=str,default="test_pred.txt")
     parser.add_argument('--combine_traindir',type=str,default="train_pred.txt")
     parser.add_argument('--combine_testout',type=str,default="test_combine_labels.txt")
     parser.add_argument('--combine_trainout',type=str,default="train_combine_labels.txt")
     #rank part
     parser.add_argument('--is_rank_train',type=int,default=1)
-    parser.add_argument('--rank_model',type=str,default='cross-encoder/stsb-roberta-base')
-    parser.add_argument('--rank_batch',type=int,default=128)
-    parser.add_argument('--rankmodel_save',type=str,default='cr_en')
+    parser.add_argument('--rank_model',type=str,default='all-MiniLM-L6-v2')
+    parser.add_argument('--rank_batch',type=int,default=64)
+    parser.add_argument('--rank_epoch',type=int,default=4)
+    parser.add_argument('--rankmodel_save',type=str,default='ba_bi_bi64')
     parser.add_argument('--rank_textdir',type=str,default='train_texts.txt')
     parser.add_argument('--is_ranking',type=int,default=1)
     args = parser.parse_args()
