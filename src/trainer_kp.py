@@ -36,9 +36,10 @@ class modeltrainer(object):
         self.checkdir = self.datadir +args.checkdir
         self.output = self.datadir + args.outputmodel
         self.batch_size = args.batch_size
-        self.epoch = args.epoch
+        self.epoch = args.t2t_epoch
         self.affix = args.affix1
         self.top_k=args.top_k
+        self.learning_rate = args.t2t_lr
         self.data_size = args.data_size
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         if self.modelname=='bart-large' or self.modelname=='BART-large' or self.modelname=='Bart-large':
@@ -94,6 +95,7 @@ class modeltrainer(object):
             save_steps=30000,                  # number of updates steps before checkpoint saves
             save_total_limit=5,              # limit the total amount of checkpoints and deletes the older checkpoints
             evaluation_strategy = "epoch",     # evaluation strategy to adopt during training                 # number of update steps before evaluation
+            learning_rate= self.learning_rate,  # learning rate
             warmup_steps=500,                # number of warmup steps for learning rate scheduler
             weight_decay=0.01,               # strength of weight decay
             predict_with_generate=True,
