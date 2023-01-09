@@ -74,44 +74,47 @@ def run(args:ArgumentParser):
             time_stap4 = time.process_time()
 
             save_time(model_time4,args.datadir+'timelog.txt','text2text model test pred end')
-        affix2='bi' #默认c r
-        if args.iscombine:
-            if args.combine_model=='cross-encoder':
-                affix2='cr'
+        affix2='bi' #默认cr
+        
+        if args.combine_model=='cross-encoder':
+            affix2='cr'
+            if args.iscombine:
                 if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
                     get_combine_list(args.datadir,"train_pred"+"_"+affix1+affix2+".txt",
-                                     args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
+                                 args.all_labels,args.combine_model_name,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
                 if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
                     get_combine_list(args.datadir,"test_pred"+"_"+affix1+affix2+".txt",
-                                     args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt
-            elif args.combine_model =='bi-encoder': # using bi
-                affix2='bi'
+                                 args.all_labels,args.combine_model_name,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt
+        elif args.combine_model =='bi-encoder': # using bi
+            affix2='bi'
+            if args.iscombine:
                 if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
                     get_combine_bi_list(args.datadir,"train_pred"+"_"+affix1+".txt",
-                                        args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
+                                    args.all_labels,args.combine_model_name,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
                 if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
                     get_combine_bi_list(args.datadir,"test_pred"+"_"+affix1+".txt",
-                                        args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt    
-            elif args.combine_model =='simcse':
-                affix2 = 'sim'
+                                    args.all_labels,args.combine_model_name,"test_combine_labels_"+affix1+affix2+".txt",) #test_pred_fix.txt    
+        elif args.combine_model =='simcse':
+            affix2 = 'sim'
+            if args.iscombine:
                 if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
                     get_combine_simcse(args.datadir,"train_pred"+"_"+affix1+".txt",
-                                        args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
+                                    args.all_labels,args.combine_model_name,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
                 if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
                     get_combine_simcse(args.datadir,"test_pred"+"_"+affix1+".txt",
-                                        args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt    
-            else:
-                print('cl'+'\n')
-                affix2='cl'
-                if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
-                    combine_clean(args.datadir,"train_pred"+"_"+affix1+".txt",
-                                        args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
-                if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
-                    combine_clean(args.datadir,"test_pred"+"_"+affix1+".txt",
-                                        args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt
-            model_time5 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            time_stap5 = time.process_time()
-            save_time(model_time5,args.datadir+'timelog.txt','combine end')
+                                    args.all_labels,args.combine_model_name,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt    
+        else:
+            print('cl'+'\n')
+            affix2='cl'
+            if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
+                combine_clean(args.datadir,"train_pred"+"_"+affix1+".txt",
+                                    args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
+            if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
+                combine_clean(args.datadir,"test_pred"+"_"+affix1+".txt",
+                                    args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt
+        model_time5 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        time_stap5 = time.process_time()
+        save_time(model_time5,args.datadir+'timelog.txt','combine end')
 
 
         #rank
