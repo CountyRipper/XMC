@@ -25,141 +25,145 @@ def run(args:ArgumentParser):
     model_time5=None
     model_time6=None
     model_time7=None
-    affix1 = 'pega'
-    if re.match("\w*bart\w*",args.modelname,re.I):
-        affix1 = 'ba'
-        if re.match("\w*bart-large\w*",args.modelname,re.I):
-            affix1 = 'bal'
-    elif re.match("\w*pegasus\w*",args.modelname,re.I):
+    try:
         affix1 = 'pega'
-    elif re.match("\w*T5\w*",args.modelname,re.I):
-        affix1 = 't5'
-        if re.match("\w*T5-large\w*",args.modelname,re.I):
-            affix1='t5l'
-    elif re.match("\w*kaybart\w*",args.modelname,re.I):
-        affix1 = 'kb'
-    args.affix1=affix1
-    print(args)
-    start = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    time_stap0 = time.process_time()
-    save_time(start,args.datadir+'timelog.txt','start')
-    trainer = modeltrainer(args)
-    model_time1 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    time_stap1 = time.process_time()
-    save_time(model_time1,args.datadir+'timelog.txt','text2text model train start')
-    
-    #define affix
-    if args.istrain:
-        #run finetune
-        torch.cuda.empty_cache()
-        trainer.train()   
-        model_time2 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        time_stap2 = time.process_time()
-        save_time(model_time2,args.datadir+'timelog.txt','text2text model train end')
-    #args.top_k = 10
-    #args.data_size = 14
-    if args.is_pred_trn:
-        torch.cuda.empty_cache()
-        trainer.predicting(args.outputmodel,args.train_json,"train_pred"+"_"+affix1+".txt")    
-        clean_set(args.datadir+'res',"train_pred"+"_"+affix1+".txt")
-        model_time3 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        time_stap3 = time.process_time()
-        save_time(model_time3,args.datadir+'timelog.txt','text2text model train pred end')
-    if args.is_pred_tst:
-        torch.cuda.empty_cache()
-        trainer.predicting(args.outputmodel,args.test_json,"test_pred"+"_"+affix1+".txt")    
-        clean_set(args.datadir+'res',"test_pred"+"_"+affix1+".txt")
-        model_time4 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        time_stap4 = time.process_time()
-        
-        save_time(model_time4,args.datadir+'timelog.txt','text2text model test pred end')
-    affix2='bi' #默认c r
-    if args.iscombine:
-        if args.combine_model=='cross-encoder':
-            affix2='cr'
-            if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
-                get_combine_list(args.datadir,"train_pred"+"_"+affix1+affix2+".txt",
-                                 args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
-            if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
-                get_combine_list(args.datadir,"test_pred"+"_"+affix1+affix2+".txt",
-                                 args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt
-        elif args.combine_model =='bi-encoder': # using bi
-            affix2='bi'
-            if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
-                get_combine_bi_list(args.datadir,"train_pred"+"_"+affix1+".txt",
-                                    args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
-            if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
-                get_combine_bi_list(args.datadir,"test_pred"+"_"+affix1+".txt",
-                                    args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt    
-        elif args.combine_model =='simcse':
-            affix2 = 'sim'
-            if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
-                get_combine_simcse(args.datadir,"train_pred"+"_"+affix1+".txt",
-                                    args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
-            if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
-                get_combine_simcse(args.datadir,"test_pred"+"_"+affix1+".txt",
-                                    args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt    
-        else:
-            print('cl'+'\n')
-            affix2='cl'
-            if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
-                combine_clean(args.datadir,"train_pred"+"_"+affix1+".txt",
-                                    args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
-            if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
-                combine_clean(args.datadir,"test_pred"+"_"+affix1+".txt",
-                                    args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt
-        model_time5 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        time_stap5 = time.process_time()
-        save_time(model_time5,args.datadir+'timelog.txt','combine end')
-    
-        
-    #rank
-    #rank_model = Rank_model()
-    
-    #args.rank_model = "all-MiniLM-L6-v2"
-    #args.rank_model = ""
-    affix3 = 'cr'
-    if re.match("\w*cross-encoder\w*",args.rank_model,re.I):
-        affix3 = 'cr'
-    else: affix3 = 'bi' 
+        if re.match("\w*bart\w*",args.modelname,re.I):
+            affix1 = 'ba'
+            if re.match("\w*bart-large\w*",args.modelname,re.I):
+                affix1 = 'bal'
+        elif re.match("\w*pegasus\w*",args.modelname,re.I):
+            affix1 = 'pega'
+        elif re.match("\w*T5\w*",args.modelname,re.I):
+            affix1 = 't5'
+            if re.match("\w*T5-large\w*",args.modelname,re.I):
+                affix1='t5l'
+        elif re.match("\w*kaybart\w*",args.modelname,re.I):
+            affix1 = 'kb'
+        args.affix1=affix1
+        print(args)
+        start = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        time_stap0 = time.process_time()
+        save_time(start,args.datadir+'timelog.txt','start')
+        trainer = modeltrainer(args)
+        model_time1 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        time_stap1 = time.process_time()
+        save_time(model_time1,args.datadir+'timelog.txt','text2text model train start')
 
-    if args.is_rank_train:
-        rank_train(args.datadir,args.rank_model,args.train_texts,"train_combine_labels_"+affix1+affix2+".txt",args.train_labels,args.rankmodel_save,args.rank_batch,args.rank_epoch)
-        model_time6 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        time_stap6 = time.process_time()
-        save_time(model_time6,args.datadir+'timelog.txt','rank train end')
-    if args.is_ranking :
-        if affix3 =='cr':
-            rank(args.datadir,args.test_texts,"test_combine_labels_"+affix1+affix2+".txt",args.rankmodel_save,"test_ranked_labels_"+affix1+affix2+affix3+".txt")
-        else:
-            rank_bi(args.datadir,args.test_texts,"test_combine_labels_"+affix1+affix2+".txt",args.rankmodel_save,"test_ranked_labels_"+affix1+affix2+affix3+".txt")
-        model_time7 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        time_stap7 = time.process_time()
-        save_time(model_time7,args.datadir+'timelog.txt','rank  end')
-    with open('./log/run_time.txt','a+') as w:
-        if model_time1:
-            w.write('start: '+model_time1+'\n')
-            w.write(f'datadir: {args.datadir}\n')
-        if model_time2:
-            w.write(f'text2text model: {args.modelname}, \
-                    batch_size: {args.batch_size}, epochs: {args.epoch}, lr: {args.t2t_lr}\n')
-            w.write('text2text model train endtime: '+model_time2+'\n')
-        if model_time3:
-            w.write('pre_trn endtime: '+model_time3+'\n')
-        if model_time4:
-            w.write('pre_tst endtime: '+model_time4+'\n')
-        if model_time5:
-            w.write(f'combine model: {args.combine_model}\n')
-            w.write('combine endtime: '+model_time5+'\n')
-        if model_time6:
-            w.write(f'rank model: {args.rank_model}, rank_batch: {args.rank_batch}, \
-                    rank_epoch: {args.rank_epoch} \n')
-            w.write('rank model train endtime: '+model_time6+'\n')
-            w.write(f'rank_save: {args.rankmodel_save} \n')
-        if model_time7:
-            w.write('ranking endtime: '+model_time7+'\n')
-        w.write('end.'+'\n'+'\n')
-    p_at_k(args.datadir,args.test_labels,"test_ranked_labels_"+affix1+affix2+affix3+".txt",args.datadir+"res_"+affix1+affix2+affix3+".txt")    
+        #define affix
+        if args.istrain:
+            #run finetune
+            torch.cuda.empty_cache()
+            trainer.train()   
+            model_time2 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            time_stap2 = time.process_time()
+            save_time(model_time2,args.datadir+'timelog.txt','text2text model train end')
+        #args.top_k = 10
+        #args.data_size = 14
+        if args.is_pred_trn:
+            torch.cuda.empty_cache()
+            trainer.predicting(args.outputmodel,args.train_json,"train_pred"+"_"+affix1+".txt")    
+            clean_set(args.datadir+'res',"train_pred"+"_"+affix1+".txt")
+            model_time3 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            time_stap3 = time.process_time()
+            save_time(model_time3,args.datadir+'timelog.txt','text2text model train pred end')
+        if args.is_pred_tst:
+            torch.cuda.empty_cache()
+            trainer.predicting(args.outputmodel,args.test_json,"test_pred"+"_"+affix1+".txt")    
+            clean_set(args.datadir+'res',"test_pred"+"_"+affix1+".txt")
+            model_time4 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            time_stap4 = time.process_time()
+
+            save_time(model_time4,args.datadir+'timelog.txt','text2text model test pred end')
+        affix2='bi' #默认c r
+        if args.iscombine:
+            if args.combine_model=='cross-encoder':
+                affix2='cr'
+                if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
+                    get_combine_list(args.datadir,"train_pred"+"_"+affix1+affix2+".txt",
+                                     args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
+                if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
+                    get_combine_list(args.datadir,"test_pred"+"_"+affix1+affix2+".txt",
+                                     args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt
+            elif args.combine_model =='bi-encoder': # using bi
+                affix2='bi'
+                if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
+                    get_combine_bi_list(args.datadir,"train_pred"+"_"+affix1+".txt",
+                                        args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
+                if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
+                    get_combine_bi_list(args.datadir,"test_pred"+"_"+affix1+".txt",
+                                        args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt    
+            elif args.combine_model =='simcse':
+                affix2 = 'sim'
+                if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
+                    get_combine_simcse(args.datadir,"train_pred"+"_"+affix1+".txt",
+                                        args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
+                if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
+                    get_combine_simcse(args.datadir,"test_pred"+"_"+affix1+".txt",
+                                        args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt    
+            else:
+                print('cl'+'\n')
+                affix2='cl'
+                if os.path.exists(os.path.join(args.datadir,'res',"train_pred"+"_"+affix1+".txt")):
+                    combine_clean(args.datadir,"train_pred"+"_"+affix1+".txt",
+                                        args.all_labels,"train_combine_labels_"+affix1+affix2+".txt") #train_pred_fix.txt
+                if os.path.exists(os.path.join(args.datadir,'res',"test_pred"+"_"+affix1+".txt")):
+                    combine_clean(args.datadir,"test_pred"+"_"+affix1+".txt",
+                                        args.all_labels,"test_combine_labels_"+affix1+affix2+".txt") #test_pred_fix.txt
+            model_time5 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            time_stap5 = time.process_time()
+            save_time(model_time5,args.datadir+'timelog.txt','combine end')
+
+
+        #rank
+        #rank_model = Rank_model()
+
+        #args.rank_model = "all-MiniLM-L6-v2"
+        #args.rank_model = ""
+        affix3 = 'cr'
+        if re.match("\w*cross-encoder\w*",args.rank_model,re.I):
+            affix3 = 'cr'
+        else: affix3 = 'bi' 
+
+        if args.is_rank_train:
+            rank_train(args.datadir,args.rank_model,args.train_texts,"train_combine_labels_"+affix1+affix2+".txt",args.train_labels,args.rankmodel_save,args.rank_batch,args.rank_epoch)
+            model_time6 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            time_stap6 = time.process_time()
+            save_time(model_time6,args.datadir+'timelog.txt','rank train end')
+        if args.is_ranking :
+            if affix3 =='cr':
+                rank(args.datadir,args.test_texts,"test_combine_labels_"+affix1+affix2+".txt",args.rankmodel_save,"test_ranked_labels_"+affix1+affix2+affix3+".txt")
+            else:
+                rank_bi(args.datadir,args.test_texts,"test_combine_labels_"+affix1+affix2+".txt",args.rankmodel_save,"test_ranked_labels_"+affix1+affix2+affix3+".txt")
+            model_time7 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            time_stap7 = time.process_time()
+            save_time(model_time7,args.datadir+'timelog.txt','rank  end')
+        # res
+        p_at_k(args.datadir,args.test_labels,"test_ranked_labels_"+affix1+affix2+affix3+".txt",args.datadir+"res_"+affix1+affix2+affix3+".txt")
+    finally:
+        with open('./log/run_time.txt','a+') as w:
+            if model_time1:
+                w.write('start: '+model_time1+'\n')
+                w.write(f'datadir: {args.datadir}\n')
+            if model_time2:
+                w.write(f'text2text model: {args.modelname}, \
+                        batch_size: {args.batch_size}, epochs: {args.epoch}, lr: {args.t2t_lr}\n')
+                w.write('text2text model train endtime: '+model_time2+'\n')
+            if model_time3:
+                w.write('pre_trn endtime: '+model_time3+'\n')
+            if model_time4:
+                w.write('pre_tst endtime: '+model_time4+'\n')
+            if model_time5:
+                w.write(f'combine model: {args.combine_model}, model_name: {args.combine_model_name}\n')
+                w.write('combine endtime: '+model_time5+'\n')
+            if model_time6:
+                w.write(f'rank model: {args.rank_model}, rank_batch: {args.rank_batch}, \
+                        rank_epoch: {args.rank_epoch} \n')
+                w.write('rank model train endtime: '+model_time6+'\n')
+                w.write(f'rank_save: {args.rankmodel_save} \n')
+            if model_time7:
+                w.write('ranking endtime: '+model_time7+'\n')
+            w.write('end.'+'\n'+'\n')
+            
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -202,6 +206,7 @@ if __name__ == '__main__':
     parser.add_argument('--iscombine',type=int,default=1,
                         help="Whether run combine")
     parser.add_argument('--combine_model',type=str,default='bi-encoder')
+    parser.add_argument('--combine_model_name',type=str,default='all-MiniLM-L6-v2')
     parser.add_argument('--combine_testdir',type=str,default="test_pred.txt")
     parser.add_argument('--combine_traindir',type=str,default="train_pred.txt")
     parser.add_argument('--combine_testout',type=str,default="test_combine_labels.txt")

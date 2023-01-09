@@ -6,35 +6,14 @@ from sentence_transformers import SentenceTransformer, util
 from transformers import AutoModel,AutoTokenizer
 #from scipy.spatial.distance import cosine
 import torch
-#from simcse import SimCSE
+from simcse import SimCSE
 from utils.detector import log
 from utils.premethod import read_labels
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model_c = CrossEncoder('cross-encoder/stsb-roberta-base',device=device)
-model_b = SentenceTransformer('all-MiniLM-L6-v2',device=device)
-model_s = AutoModel.from_pretrained("princeton-nlp/sup-simcse-roberta-base").to(device)
+
+
+
 from tqdm import tqdm
-
-
-def get_combine_list_sim(data_dir,pred_data,reference_data,outputdir=None)-> List[List[str]]:
-    pred_data = os.path.join(data_dir,'res',pred_data)
-    reference_data = os.path.join(data_dir,reference_data)
-    print('pred_data: '+pred_data)
-    print('reference:'+reference_data)
-    outputdir=os.path.join(data_dir,'res',outputdir)
-    print('data_dir: '+data_dir)
-    print('write into: '+outputdir)
-    print('model_name: simcse')
-    all_labels= []
-    pre_labels = []
-    with open(reference_data,'r+') as f:
-        for row in f:
-            all_labels.append(row.strip())
-    with open(pred_data,'r+') as f:
-        for row in f:
-            pre_labels.append(row.rstrip().rstrip(',').split(", "))
-    
-    
 
 '''
 input : 数据集目录，预测出来的标签数据，参考标签数据
@@ -45,7 +24,10 @@ output: 输出替换标签
 def cluster_combine(data_dir,pred_data,reference_data,outputdir=None)-> List[List[str]]:
     pass
 #getcombine by cross-encoder
-def get_combine_list(data_dir,pred_data,reference_data,outputdir=None)-> List[List[str]]:
+def get_combine_list(data_dir,pred_data,reference_data,model_name,outputdir=None)-> List[List[str]]:
+    print(f'combine model_name: {model_name}')
+    # cross-encoder/stsb-roberta-base
+    model_c = CrossEncoder(model_name=model_name,device=device)
     print('get_combine_list')
     outputdir = os.path.join(data_dir,'res',outputdir)
     print('write into: '+outputdir)
@@ -106,7 +88,10 @@ def get_combine_list(data_dir,pred_data,reference_data,outputdir=None)-> List[Li
     return combine_list
 
 @log
-def get_combine_bi_list(data_dir,pred_data,reference_data,outputdir=None)-> List[List[str]]:
+def get_combine_bi_list(data_dir,pred_data,reference_data,model_name,outputdir=None)-> List[List[str]]:
+    model_b = SentenceTransformer(model_name_or_path=model_name,device=device)
+    #model_b = SentenceTransformer('all-MiniLM-L6-v2',device=device)
+    print(f'combine model_name: {model_name}')
     pred_data = os.path.join(data_dir,'res',pred_data)
     reference_data = os.path.join(data_dir,reference_data)
     print('pred_data: '+pred_data)
@@ -126,7 +111,7 @@ def get_combine_bi_list(data_dir,pred_data,reference_data,outputdir=None)-> List
         for i in f2:
             all_label_list.append(i.rstrip())
     if not os.path.exists(data_dir+"all_labels.pkl"):
-        embeddings_all = model_b.encode(all_label_list,convert_to_tensor=True)
+        embeddings_all = model_b.encode(all_label_list,convert_to_tensor=True,device=device)
         with open(data_dir+"all_labels.pkl", "wb") as fOut:
             pickle.dump({'embeddings': embeddings_all}, fOut, protocol=pickle.HIGHEST_PROTOCOL)
     else:
@@ -144,7 +129,7 @@ def get_combine_bi_list(data_dir,pred_data,reference_data,outputdir=None)-> List
         if len(no_equal_list)==0:
             continue
         t_list = list(map(lambda x: x['label'], no_equal_list))
-        embeddings_pre = model_b.encode(t_list, convert_to_tensor=True)
+        embeddings_pre = model_b.encode(t_list, convert_to_tensor=True,device=device)
         cosine_score = util.cos_sim(embeddings_pre,embeddings_all)
         #cosine_score是一个len(no_equal_list)行，(all_label_list)列的一个矩阵
         #cosine_score的长度一定等于no_equal_list
@@ -198,7 +183,8 @@ def combine_clean(data_dir,pred_data,reference_data,outputdir=None)-> List[List[
             for row in res:
                 w1.write(", ".join(row)+'\n')
     
-def get_combine_simcse(data_dir,pred_data,reference_data,outputdir=None)-> List[List[str]]:
+def get_combine_simcse(data_dir,pred_data,reference_data,model_name,outputdir=None)-> List[List[str]]:
+    model_s = SimCSE(model_name_or_path=model_name,device=device)
     pred_data = os.path.join(data_dir,'res',pred_data)
     reference_data = os.path.join(data_dir,reference_data)
     print('pred_data: '+pred_data)
@@ -214,10 +200,10 @@ def get_combine_simcse(data_dir,pred_data,reference_data,outputdir=None)-> List[
     with open(reference_data,'r+') as f2:
         for i in f2:
             all_label_list.append(i.rstrip())
-    tokenizer = AutoTokenizer("princeton-nlp/sup-simcse-roberta-base")
-    all_label_inputs = tokenizer(all_label_list,padding=True, truncation=True, return_tensors="pt")
+    #tokenizer = AutoTokenizer.from_pretrained("princeton-nlp/sup-simcse-roberta-base")
+    #all_label_inputs = tokenizer(all_label_list,padding=True, truncation=True, return_tensors="pt").to(device)
     with torch.no_grad():
-        all_label_embs = model_s(**all_label_inputs, output_hidden_states=True, return_dict=True).pooler_output
+        all_label_embs = model_s.encode(all_label_list,device=device)
         for i in tqdm(range(len(pred_list))):
             no_equal_list=[]
             for ind,each_label in enumerate(pred_list[i]):
@@ -229,10 +215,10 @@ def get_combine_simcse(data_dir,pred_data,reference_data,outputdir=None)-> List[
                 continue
             cur_no_equal = list(map(lambda x: x['label'], no_equal_list))
             #获取当前non-exisitent labels的inputs_ids
-            cur_no_equal_token = tokenizer(cur_no_equal,padding=True, truncation=True, return_tensors="pt")
-            no_equal_embs = model_s(**cur_no_equal_token, output_hidden_states=True, return_dict=True).pooler_output
+            #cur_no_equal_token = tokenizer(cur_no_equal,padding=True, truncation=True, return_tensors="pt").to(device)
+            no_equal_embs = model_s.encode(cur_no_equal,device=device)
             #cosine_score是一个len(cur_no_equal)行，(all_label_list)列的一个矩阵
-            cos_matrix = util.cos_sim(no_equal_embs,all_label_embs)
+            cos_matrix = util.cos_sim(no_equal_embs,all_label_embs).to(device)
             flag = torch.zeros(len(all_label_list),device=device)#标志向量，用于排除已经替换的参考标签
             for j in range(len(cur_no_equal)):
                 cos_scores = torch.add(flag,cos_matrix[j])
