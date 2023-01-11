@@ -119,3 +119,6 @@ def rank_bi(dir,text_dir,pred_combine_dir,model_dir,outputdir=None)-> List[List[
         for row in scores_list:
             w2.write(str(row)+'\n')                   
     return ranked_list
+
+def rank_simcse(dir,text_dir,pred_combine_dir,model_dir,outputdir=None)-> List[List[str]]:
+    pass

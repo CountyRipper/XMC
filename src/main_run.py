@@ -141,7 +141,8 @@ def run(args:ArgumentParser):
             time_stap7 = time.process_time()
             save_time(model_time7,args.datadir+'timelog.txt','rank  end')
         # res
-        p_at_k(args.datadir,args.test_labels,"test_ranked_labels_"+affix1+affix2+affix3+".txt",args.datadir+"res_"+affix1+affix2+affix3+".txt")
+        res = None
+        res = p_at_k(args.datadir,args.test_labels,"test_ranked_labels_"+affix1+affix2+affix3+".txt",args.datadir+"res_"+affix1+affix2+affix3+".txt")
     finally:
         with open('./log/run_time.txt','a+') as w:
             if model_time1:
@@ -149,7 +150,7 @@ def run(args:ArgumentParser):
                 w.write(f'datadir: {args.datadir}\n')
             if model_time2:
                 w.write(f'text2text model: {args.modelname}, \
-                        batch_size: {args.batch_size}, epochs: {args.epoch}, lr: {args.t2t_lr}\n')
+                        batch_size: {args.batch_size}, epochs: {args.t2t_epoch}, lr: {args.t2t_lr}\n')
                 w.write('text2text model train endtime: '+model_time2+'\n')
             if model_time3:
                 w.write('pre_trn endtime: '+model_time3+'\n')
@@ -165,6 +166,8 @@ def run(args:ArgumentParser):
                 w.write(f'rank_save: {args.rankmodel_save} \n')
             if model_time7:
                 w.write('ranking endtime: '+model_time7+'\n')
+            if res:
+                w.write(f'p@1:{res[0]:.6f} \n P@3:{res[1]:.6f}\n P@5:{res[2]:.6f}\n')
             w.write('end.'+'\n'+'\n')
             
 

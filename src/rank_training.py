@@ -10,16 +10,17 @@ import os
 import re
 import time
 from sentence_transformers import SentenceTransformer, InputExample, losses
-
+from simcse import SimCSE
 from sentence_transformers.cross_encoder import CrossEncoder
 import math
 from sentence_transformers import LoggingHandler, util
 from sentence_transformers.cross_encoder.evaluation import CECorrelationEvaluator
 from sentence_transformers import InputExample
+import torch
 from torch.utils.data import DataLoader
 
 from utils.detector import log
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # nltk.download('stopwords')
 
 # stemmer = SnowballStemmer("english")
@@ -53,8 +54,8 @@ def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_s
         for each in pred_label_list[i]:
             label_len_list = len(label_list[i])
             if each in label_list[i]:
-                label_score = 0.5+0.5 *(label_len_list - label_list[i].index(each))/label_len_list
-                #label_score = 1.0
+                #label_score = 0.5+0.5 *(label_len_list - label_list[i].index(each))/label_len_list
+                label_score = 1.0
                 fine_tune_list.append(InputExample(texts=[raw_text_list[i].rstrip(), each], label=label_score))
                 label_score_list.append(str(i) + ' ' + each+ ' ' +str(label_score))
             else:
@@ -94,34 +95,51 @@ def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_s
         '''需要修改,保存check路径'''
         model.save(model_save_dir)
     #bi-encoder
+    elif re.match('\w*simcse\w*',model_name,re.I):
+        model = SimCSE(model_name_or_path=model_name,device=device)
+        
     else:
-        model = SentenceTransformer(model_name)
+        model = SentenceTransformer(model_name,device=device)
         #model = SentenceTransformer('all-MiniLM-L6-v2')
-        train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=batch_size)
-        train_loss = losses.CosineSimilarityLoss(model)
-        shuffle=True
-        #print("batch_size="+ "24")
-        # Configure the training
-        warmup_steps = math.ceil(len(train_dataloader) * num_epoch * 0.1) #10% of train data for warm-up
+    train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=batch_size)
+    train_loss = losses.CosineSimilarityLoss(model)
+    shuffle=True
+    #print("batch_size="+ "24")
+    # Configure the training
+    warmup_steps = math.ceil(len(train_dataloader) * num_epoch * 0.1) #10% of train data for warm-up
+
+    #logger.info("Warmup-steps: {}".format(warmup_steps))
+    model.fit(train_objectives=[(train_dataloader, train_loss)],
+            epochs=num_epoch,
+            warmup_steps=warmup_steps,
+            #train_loss=train_loss,
+            #用curr
+            output_path=model_save_dir)
+    model.save(model_save_dir)
     
-        #logger.info("Warmup-steps: {}".format(warmup_steps))
-        model.fit(train_objectives=[(train_dataloader, train_loss)],
-                epochs=num_epoch,
-                warmup_steps=warmup_steps,
-                #train_loss=train_loss,
-                #用curr
-                output_path=model_save_dir)
-        model.save(model_save_dir)
-        time_stap2 = time.process_time()
-        end =  datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        print('tarin end:', end)
-        print('tarining cost time:'+ str((time_stap2-time_stap1)/60/60 )+"hours.")
-        with open(os.path.join(dir,"train_log.txt"),'a+')as w: 
-            w.write("datadir:"+dir+", "+"model_name: "+model_name+", "+"batch_size: "+str(batch_size)+"epoch: "+str(num_epoch)+"\n"
-                +", "+"output: "+model_save_dir+"\n")
-            w.write("starttime:"+start+". "+'\n')
-            w.write('timecost:'+str((time_stap2-time_stap1)/60/60 )+"hours.\n")
-            w.write("endtime: "+end+"\n")
+    # train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=batch_size)
+    # # shuffle=True
+    # print("batch_size=",batch_size)
+    # # Configure the training
+    # warmup_steps = math.ceil(len(train_dataloader) * num_epoch * 0.1) #10% of train data for warm-up
+    # #logger.info("Warmup-steps: {}".format(warmup_steps))
+    # model.fit(train_dataloader=train_dataloader,
+    #           epochs=num_epoch,
+    #           warmup_steps=warmup_steps,
+    #           #用curr
+    #           output_path=model_save_dir)
+    # '''需要修改,保存check路径'''
+    # model.save(model_save_dir)
+        # time_stap2 = time.process_time()
+        # end =  datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        # print('tarin end:', end)
+        # print('tarining cost time:'+ str((time_stap2-time_stap1)/60/60 )+"hours.")
+        # with open(os.path.join(dir,"train_log.txt"),'a+')as w: 
+        #     w.write("datadir:"+dir+", "+"model_name: "+model_name+", "+"batch_size: "+str(batch_size)+"epoch: "+str(num_epoch)+"\n"
+        #         +", "+"output: "+model_save_dir+"\n")
+        #     w.write("starttime:"+start+". "+'\n')
+        #     w.write('timecost:'+str((time_stap2-time_stap1)/60/60 )+"hours.\n")
+        #     w.write("endtime: "+end+"\n")
     
 #rank_train('./dataset/EUR-Lex/',"train_texts.txt","generate_result/train_pred.txt","train_labels.txt","cr_en")
 
@@ -155,8 +173,8 @@ def rank_train_BI(dir,text_data,train_pred_data,train_label_data,model_save_dir,
         for each in pred_label_list[i]:
             label_len_list = len(label_list[i])
             if each in label_list[i]:
-                label_score = 0.5+0.5 *(label_len_list - label_list[i].index(each))/label_len_list
-                #label_score = 1.0
+                #label_score = 0.5+0.5 *(label_len_list - label_list[i].index(each))/label_len_list
+                label_score = 1.0
                 fine_tune_list.append(InputExample(texts=[raw_text_list[i].rstrip(), each], label=label_score))
                 label_score_list.append(str(i) + ' ' + each+ ' ' +str(label_score))
             else:
@@ -168,6 +186,7 @@ def rank_train_BI(dir,text_data,train_pred_data,train_label_data,model_save_dir,
             fb.write(each)
             fb.write("\n")    
     #print('file complete')
+    
     num_epoch = 5
     model = SentenceTransformer('all-MiniLM-L6-v2')
     train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=batch_size)
