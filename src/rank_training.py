@@ -9,7 +9,7 @@ import datetime
 import os
 import re
 import time
-from sentence_transformers import SentenceTransformer, InputExample, losses
+from sentence_transformers import SentenceTransformer, InputExample, losses,evaluation
 from simcse import SimCSE
 from sentence_transformers.cross_encoder import CrossEncoder
 import math
@@ -59,7 +59,7 @@ def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_s
                 fine_tune_list.append(InputExample(texts=[raw_text_list[i].rstrip(), each], label=label_score))
                 label_score_list.append(str(i) + ' ' + each+ ' ' +str(label_score))
             else:
-                fine_tune_list.append(InputExample(texts=[raw_text_list[i].rstrip(), each], label=0))
+                fine_tune_list.append(InputExample(texts=[raw_text_list[i].rstrip(), each], label=0.0))
                 label_score_list.append(str(i) + ' ' + each+ ' 0')
             '''
             for i in range(len(pred_list)):
@@ -96,13 +96,14 @@ def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_s
         model.save(model_save_dir)
     #bi-encoder
     elif re.match('\w*simcse\w*',model_name,re.I):
-        model = SimCSE(model_name_or_path=model_name,device=device)
+        model = SentenceTransformer(model_name_or_path=model_name,device=device)
         
     else:
         model = SentenceTransformer(model_name,device=device)
         #model = SentenceTransformer('all-MiniLM-L6-v2')
     train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=batch_size)
     train_loss = losses.CosineSimilarityLoss(model)
+    #evaluator = evaluation.EmbeddingSimilarityEvaluator()
     shuffle=True
     #print("batch_size="+ "24")
     # Configure the training

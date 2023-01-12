@@ -6,7 +6,7 @@ import re
 import torch
 from combine import combine_clean, get_combine_bi_list, get_combine_list, get_combine_simcse
 from utils.premethod import clean_set, save_time, p_at_k
-from rank import rank_bi,rank
+from rank import rank_bi,rank,rank_simcse
 from rank_training import rank_train
 from model.rank_model import Rank_model
 from trainer_kp import modeltrainer
@@ -125,6 +125,8 @@ def run(args:ArgumentParser):
         affix3 = 'cr'
         if re.match("\w*cross-encoder\w*",args.rank_model,re.I):
             affix3 = 'cr'
+        elif re.match("\w*simcse\w*",args.rank_model,re.I):
+            affix3 = 'sim'
         else: affix3 = 'bi' 
 
         if args.is_rank_train:
@@ -135,6 +137,8 @@ def run(args:ArgumentParser):
         if args.is_ranking :
             if affix3 =='cr':
                 rank(args.datadir,args.test_texts,"test_combine_labels_"+affix1+affix2+".txt",args.rankmodel_save,"test_ranked_labels_"+affix1+affix2+affix3+".txt")
+            elif affix3 =='sim':
+                rank_simcse(args.datadir,args.test_texts,"test_combine_labels_"+affix1+affix2+".txt",args.rankmodel_save,"test_ranked_labels_"+affix1+affix2+affix3+".txt")
             else:
                 rank_bi(args.datadir,args.test_texts,"test_combine_labels_"+affix1+affix2+".txt",args.rankmodel_save,"test_ranked_labels_"+affix1+affix2+affix3+".txt")
             model_time7 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -167,7 +171,7 @@ def run(args:ArgumentParser):
             if model_time7:
                 w.write('ranking endtime: '+model_time7+'\n')
             if res:
-                w.write(f'p@1:{res[0]:.6f} \n P@3:{res[1]:.6f}\n P@5:{res[2]:.6f}\n')
+                w.write(f'p@1:{res[0]:.6f} \nP@3:{res[1]:.6f}\nP@5:{res[2]:.6f}\n')
             w.write('end.'+'\n'+'\n')
             
 
