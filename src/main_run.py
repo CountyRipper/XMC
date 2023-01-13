@@ -116,19 +116,12 @@ def run(args:ArgumentParser):
         time_stap5 = time.process_time()
         save_time(model_time5,args.datadir+'timelog.txt','combine end')
 
-
-        #rank
-        #rank_model = Rank_model()
-
-        #args.rank_model = "all-MiniLM-L6-v2"
-        #args.rank_model = ""
         affix3 = 'cr'
-        if re.match("\w*cross-encoder\w*",args.rank_model,re.I):
+        if 'cross-encoder' in args.rank_model:
             affix3 = 'cr'
-        elif re.match("\w*simcse\w*",args.rank_model,re.I):
-            affix3 = 'sim'
-        else: affix3 = 'bi' 
-
+        elif 'simcse' in args.rank_model:
+            affix3 = 'sim'  
+        else: affix3 = 'bi'
         if args.is_rank_train:
             rank_train(args.datadir,args.rank_model,args.train_texts,"train_combine_labels_"+affix1+affix2+".txt",args.train_labels,args.rankmodel_save,args.rank_batch,args.rank_epoch)
             model_time6 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -138,7 +131,7 @@ def run(args:ArgumentParser):
             if affix3 =='cr':
                 rank(args.datadir,args.test_texts,"test_combine_labels_"+affix1+affix2+".txt",args.rankmodel_save,"test_ranked_labels_"+affix1+affix2+affix3+".txt")
             elif affix3 =='sim':
-                rank_simcse(args.datadir,args.test_texts,"test_combine_labels_"+affix1+affix2+".txt",args.rankmodel_save,"test_ranked_labels_"+affix1+affix2+affix3+".txt")
+                rank_simcse(args.datadir,args.test_texts,"test_combine_labels_"+affix1+affix2+".txt",args.rankmodel_save,args.rank_is_trained,"test_ranked_labels_"+affix1+affix2+affix3+".txt")
             else:
                 rank_bi(args.datadir,args.test_texts,"test_combine_labels_"+affix1+affix2+".txt",args.rankmodel_save,"test_ranked_labels_"+affix1+affix2+affix3+".txt")
             model_time7 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -175,59 +168,59 @@ def run(args:ArgumentParser):
             w.write('end.'+'\n'+'\n')
             
 
-if __name__ == '__main__':
-    parser = ArgumentParser()
-    parser.add_argument('--datadir', type=str, default='./dataset/EUR-Lex/',
-                        help='dataset_dir')
-    parser.add_argument('--test_json',type=str,default='test_finetune.json')
-    parser.add_argument('--train_json',type=str,default='train_finetune.json')
-    parser.add_argument('--all_labels',type=str,default='all_labels.txt')
-    parser.add_argument('--test_labels',type=str,default='test_labels.txt')
-    parser.add_argument('--train_labels',type=str,default="train_labels.txt")
-    parser.add_argument('--test_texts',type=str,default="test_texts.txt")
-    parser.add_argument('--train_texts',type=str,default="train_texts.txt")
-    # finetune args
-    parser.add_argument('--istrain',type=int,default=1,
-                        help="whether run finteune processing")
-    parser.add_argument('-b', '--batch_size', type=int, default=4,
-                        help='number of batch size for training')
-    parser.add_argument('-e', '--t2t_epoch', type=int, default=5,
-                        help='number of epochs to train (default: 100)')
-    parser.add_argument('--modelname', type=str,default='bart',
-                        help='modelname ')
-    parser.add_argument('--affix1',type=str,default="")
-    parser.add_argument('--affix2',type=str,default="")
-    parser.add_argument('--checkdir', type=str, default='bart_check',
-                        help='path to trained model to save')
-    parser.add_argument('--outputmodel',type=str,default='bart_save',
-                        help="fine-tune model save dir")
-    parser.add_argument('--t2t_lr', type=float, default=2e-5,
-                        help='learning rate')
-    parser.add_argument('--seed', type=int, default=44,
-                        help='random seed (default: 1)')
-    #perdicting args
-    parser.add_argument('--is_pred_trn',type=int,default=1,
-                        help="Whether run predicting training dataset")
-    parser.add_argument('--is_pred_tst',type=int,default=1,
-                        help="Whether run predicting testing dataset")
-    parser.add_argument('--top_k',type=int,default=10)
-    parser.add_argument('--data_size',type=int,default=12)
-    #combine part
-    parser.add_argument('--iscombine',type=int,default=1,
-                        help="Whether run combine")
-    parser.add_argument('--combine_model',type=str,default='bi-encoder')
-    parser.add_argument('--combine_model_name',type=str,default='all-MiniLM-L6-v2')
-    parser.add_argument('--combine_testdir',type=str,default="test_pred.txt")
-    parser.add_argument('--combine_traindir',type=str,default="train_pred.txt")
-    parser.add_argument('--combine_testout',type=str,default="test_combine_labels.txt")
-    parser.add_argument('--combine_trainout',type=str,default="train_combine_labels.txt")
-    #rank part
-    parser.add_argument('--is_rank_train',type=int,default=1)
-    parser.add_argument('--rank_model',type=str,default='all-MiniLM-L6-v2')
-    parser.add_argument('--rank_batch',type=int,default=64)
-    parser.add_argument('--rank_epoch',type=int,default=4)
-    parser.add_argument('--rankmodel_save',type=str,default='ba_bi_bi64')
-    parser.add_argument('--rank_textdir',type=str,default='train_texts.txt')
-    parser.add_argument('--is_ranking',type=int,default=1)
-    args = parser.parse_args()
-    run(args)
+# if __name__ == '__main__':
+#     parser = ArgumentParser()
+#     parser.add_argument('--datadir', type=str, default='./dataset/EUR-Lex/',
+#                         help='dataset_dir')
+#     parser.add_argument('--test_json',type=str,default='test_finetune.json')
+#     parser.add_argument('--train_json',type=str,default='train_finetune.json')
+#     parser.add_argument('--all_labels',type=str,default='all_labels.txt')
+#     parser.add_argument('--test_labels',type=str,default='test_labels.txt')
+#     parser.add_argument('--train_labels',type=str,default="train_labels.txt")
+#     parser.add_argument('--test_texts',type=str,default="test_texts.txt")
+#     parser.add_argument('--train_texts',type=str,default="train_texts.txt")
+#     # finetune args
+#     parser.add_argument('--istrain',type=int,default=1,
+#                         help="whether run finteune processing")
+#     parser.add_argument('-b', '--batch_size', type=int, default=4,
+#                         help='number of batch size for training')
+#     parser.add_argument('-e', '--t2t_epoch', type=int, default=5,
+#                         help='number of epochs to train (default: 100)')
+#     parser.add_argument('--modelname', type=str,default='bart',
+#                         help='modelname ')
+#     parser.add_argument('--affix1',type=str,default="")
+#     parser.add_argument('--affix2',type=str,default="")
+#     parser.add_argument('--checkdir', type=str, default='bart_check',
+#                         help='path to trained model to save')
+#     parser.add_argument('--outputmodel',type=str,default='bart_save',
+#                         help="fine-tune model save dir")
+#     parser.add_argument('--t2t_lr', type=float, default=2e-5,
+#                         help='learning rate')
+#     parser.add_argument('--seed', type=int, default=44,
+#                         help='random seed (default: 1)')
+#     #perdicting args
+#     parser.add_argument('--is_pred_trn',type=int,default=1,
+#                         help="Whether run predicting training dataset")
+#     parser.add_argument('--is_pred_tst',type=int,default=1,
+#                         help="Whether run predicting testing dataset")
+#     parser.add_argument('--top_k',type=int,default=10)
+#     parser.add_argument('--data_size',type=int,default=12)
+#     #combine part
+#     parser.add_argument('--iscombine',type=int,default=1,
+#                         help="Whether run combine")
+#     parser.add_argument('--combine_model',type=str,default='bi-encoder')
+#     parser.add_argument('--combine_model_name',type=str,default='all-MiniLM-L6-v2')
+#     parser.add_argument('--combine_testdir',type=str,default="test_pred.txt")
+#     parser.add_argument('--combine_traindir',type=str,default="train_pred.txt")
+#     parser.add_argument('--combine_testout',type=str,default="test_combine_labels.txt")
+#     parser.add_argument('--combine_trainout',type=str,default="train_combine_labels.txt")
+#     #rank part
+#     parser.add_argument('--is_rank_train',type=int,default=1)
+#     parser.add_argument('--rank_model',type=str,default='all-MiniLM-L6-v2')
+#     parser.add_argument('--rank_batch',type=int,default=64)
+#     parser.add_argument('--rank_epoch',type=int,default=4)
+#     parser.add_argument('--rankmodel_save',type=str,default='ba_bi_bi64')
+#     parser.add_argument('--rank_textdir',type=str,default='train_texts.txt')
+#     parser.add_argument('--is_ranking',type=int,default=1)
+#     args = parser.parse_args()
+#     run(args)

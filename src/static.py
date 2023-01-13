@@ -31,7 +31,7 @@ def get_candidate(method:str,num:int,text_dir,output_dir=None)->List[str]:
                 w.write(", ".join(i))
                 w.write('\n')
     return ress  
-dir = "./dataset/EUR-Lex/"
+dir = "./dataset/Wiki10-31K/"
 get_candidate("toprank",5,dir+"test_texts.txt",os.path.join(dir,'res','test_toprank.txt'))
 get_candidate("tfidf",5,dir+"test_texts.txt",os.path.join(dir,'res','test_tfidf.txt'))
 p_at_k(dir,"test_labels.txt",'test_toprank.txt','res_toprank.txt')

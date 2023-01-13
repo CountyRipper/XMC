@@ -1,6 +1,6 @@
 import os
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import EarlyStopping
+from pytorch_lightning.callbacks import EarlyStopping,ModelCheckpoint,LearningRateMonitor
 import torch
 from transformers import (AutoTokenizer,BartTokenizerFast, BartForConditionalGeneration,Seq2SeqTrainer,
                           Seq2SeqTrainingArguments,PegasusForConditionalGeneration, PegasusTokenizerFast,
@@ -73,7 +73,7 @@ class GenerationModel(pl.LightningModule):
   def train_dataloader(self):
     datadir = self.hparameters['train_dir']
     prefix = "summarize: "
-    dataset = load_dataset('json',data_files= {datadir})
+    dataset = load_dataset('json',data_files= datadir)
     train_texts, train_labels = [prefix + each for each in dataset['train']['document']], dataset['train']['summary']
     
     encodings = self.tokenizer(train_texts, truncation=True, padding=True)
@@ -98,23 +98,29 @@ class GenerationModel(pl.LightningModule):
     return val_data
 
 hparams = {
-    'max_epochs': 5,
-    'batch_size': 2,
-    'learning_rate': 3e-4,
-    'train_dir': "./dataset/EUR-Lex/train_finetune.json",
-    'val_dir': "./dataset/EUR-Lex/test_finetune.json",
-    'data_dir': "./dataset/EUR-Lex/",
-    'model': 't5'
+    'max_epochs': 3,
+    'batch_size': 4,
+    'learning_rate': 2e-5,
+    'train_dir': "./dataset/Wiki10-31K/train_finetune.json",
+    'val_dir': "./dataset/Wiki10-31K/test_finetune.json",
+    'data_dir': "./dataset/Wiki10-31K/",
+    'model': 'BART'
 }
 
 early_stopping = EarlyStopping(monitor='val_loss', patience=3, mode='min')
-
+checkpoint_callback = ModelCheckpoint(
+        dirpath='./log/t2t_check',
+        filename='{epoch}-{val_loss:.2f}-{other_metric:.2f}'
+    )
+lr_callback = LearningRateMonitor(logging_interval="step")
 model = GenerationModel(hparams)
 logger = TensorBoardLogger(save_dir=os.path.join(hparams['data_dir'],'t2t'),name=hparams['model']+'_log')
-
-trainer = pl.Trainer(max_epochs=10, callbacks=[early_stopping], logger=logger,
-                     default_root_dir=os.path.join(hparams['data_dir'],hparams['model']+'_save'),
+if not os.path.exists(os.path.join(hparams['data_dir'],hparams['model']+'_save')):
+  os.mkdir(os.path.join(hparams['data_dir'],hparams['model']+'_save'))
+trainer = pl.Trainer(max_epochs=3, callbacks=[early_stopping,checkpoint_callback ,lr_callback], logger=logger,
                      #auto_lr_find=True,
+                     default_root_dir=os.path.join(hparams['data_dir'],hparams['model']+'_save'),
                      accelerator="gpu", devices=1)
+
 trainer.fit(model,train_dataloaders=model.train_dataloader(),
                 val_dataloaders=model.val_dataloader())

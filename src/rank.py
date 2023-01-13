@@ -6,9 +6,11 @@ from sentence_transformers.cross_encoder import CrossEncoder
 # from nltk.stem.snowball import SnowballStemmer
 from sentence_transformers import SentenceTransformer, util
 from transformers import AutoModel,AutoTokenizer
+from simcse import SimCSE
 from utils.premethod import read_labels,read_texts
 from tqdm import tqdm
-
+import torch
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def rank(dir,text_dir,pred_combine_dir,model_dir,outputdir=None)-> List[List[str]]:
     text_dir=dir+text_dir
     pred_combine_dir=os.path.join(dir,'res',pred_combine_dir)
@@ -110,10 +112,11 @@ def rank_bi(dir,text_dir,pred_combine_dir,model_dir,outputdir=None)-> List[List[
             w2.write(str(row)+'\n')                   
     return ranked_list
 
-def rank_simcse(dir,text_dir,pred_combine_dir,model_dir,outputdir=None)-> List[List[str]]:
+def rank_simcse(dir,text_dir,pred_combine_dir,model_dir,is_trained,outputdir=None)-> List[List[str]]:
     text_dir=dir+text_dir
     pred_combine_dir=os.path.join(dir,'res',pred_combine_dir)
-    model_dir=dir+model_dir
+    if is_trained:
+        model_dir=dir+model_dir
     outputdir = os.path.join(dir,'res',outputdir)
     print('rank processing:'+'\n')
     print('text_dir: '+text_dir)
@@ -122,7 +125,7 @@ def rank_simcse(dir,text_dir,pred_combine_dir,model_dir,outputdir=None)-> List[L
     print('output:',outputdir)
     #model_c = CrossEncoder('cross-encoder/stsb-roberta-base')
     #model_b = SentenceTransformer('all-MiniLM-L6-v2')
-    model = AutoModel.from_pretrained(model_dir)
+    model = SimCSE(model_dir)
     pred_label_list= read_labels(pred_combine_dir)
     text_list=read_texts(text_dir)
     ranked_list=[]#保存排序好的列表
@@ -138,8 +141,8 @@ def rank_simcse(dir,text_dir,pred_combine_dir,model_dir,outputdir=None)-> List[L
         src_text = text_list[i]
         cur_label_set = pred_label_list[i]
         #获取文本和不同标签的embedding
-        text_embedding = model.encode(src_text,convert_to_tensor=True)
-        label_embedding = model.encode(cur_label_set,convert_to_tensor=True)
+        text_embedding = model.encode(src_text,device=device)
+        label_embedding = model.encode(cur_label_set,device=device)
         cosine_scores = util.cos_sim(text_embedding, label_embedding)
         #获取之后计算得分
         #cosine_scores应该是一个数组，对应每个标签的优先级
@@ -160,3 +163,4 @@ def rank_simcse(dir,text_dir,pred_combine_dir,model_dir,outputdir=None)-> List[L
         for row in scores_list:
             w2.write(str(row)+'\n')                   
     return ranked_list
+

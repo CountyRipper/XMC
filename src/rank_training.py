@@ -27,6 +27,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # stemmer2 = SnowballStemmer("english", ignore_stopwords=True)
 def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_save_dir,batch_size,epochs):    
     fine_tune_list = []
+    fine_tune_unsup = []
     raw_text_list = []
     label_list=[]
     pred_label_list=[]
@@ -50,12 +51,16 @@ def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_s
         for row in label_txt:
             label_list.append(row.strip().split(", "))
     print(str(raw_text_list[0])+'\n'+str(pred_label_list[0])+'\n'+str(label_list[0]))
+    train_data_un = [InputExample(texts=[i, i]) for m in label_list for i in m ]
+    #fine_tune_unsup.append(InputExample(InputExample(texts=[s, s] for s in label_list)))
     for i in range(len(pred_label_list)):
         for each in pred_label_list[i]:
             label_len_list = len(label_list[i])
+            
             if each in label_list[i]:
                 #label_score = 0.5+0.5 *(label_len_list - label_list[i].index(each))/label_len_list
                 label_score = 1.0
+                #fine_tune_unsup.append(InputExample(InputExample(texts=[s, s]) for s in raw_text_list[i].rstrip()))
                 fine_tune_list.append(InputExample(texts=[raw_text_list[i].rstrip(), each], label=label_score))
                 label_score_list.append(str(i) + ' ' + each+ ' ' +str(label_score))
             else:
@@ -95,20 +100,37 @@ def rank_train(dir,model_name,text_data,train_pred_data,train_label_data,model_s
         '''需要修改,保存check路径'''
         model.save(model_save_dir)
     #bi-encoder
-    elif re.match('\w*simcse\w*',model_name,re.I):
-        model = SentenceTransformer(model_name_or_path=model_name,device=device)
-        
+    elif 'sup-simcse' in model_name:
+        if 'unsup-simcse'in model_name:
+            print("unsupervised")
+            model = SentenceTransformer(model_name_or_path=model_name,device=device)   
+            train_loss = losses.MultipleNegativesRankingLoss(model) 
+            #train_dataloader_un = DataLoader(fine_tune_unsup, shuffle=True, batch_size=batch_size)
+            train_dataloader = DataLoader(train_data_un, batch_size=64, shuffle=True)
+            warmup_steps = math.ceil(len(train_dataloader) * num_epoch * 0.1) #10% of train data for warm-up
+            #   logger.info("Warmup-steps: {}".format(warmup_steps))
+            
+            model.fit(train_objectives=[(train_dataloader, train_loss)],
+                epochs=num_epoch,
+                warmup_steps=warmup_steps,
+                #train_loss=train_loss,
+                #用curr
+                output_path=model_save_dir)
+            model.save(model_save_dir)
+            return
+        else:
+            model = SentenceTransformer(model_name_or_path=model_name,device=device)
+            train_loss = losses.CosineSimilarityLoss(model)         
     else:
         model = SentenceTransformer(model_name,device=device)
+        train_loss = losses.CosineSimilarityLoss(model)
         #model = SentenceTransformer('all-MiniLM-L6-v2')
     train_dataloader = DataLoader(fine_tune_list, shuffle=True, batch_size=batch_size)
-    train_loss = losses.CosineSimilarityLoss(model)
     #evaluator = evaluation.EmbeddingSimilarityEvaluator()
     shuffle=True
     #print("batch_size="+ "24")
     # Configure the training
     warmup_steps = math.ceil(len(train_dataloader) * num_epoch * 0.1) #10% of train data for warm-up
-
     #logger.info("Warmup-steps: {}".format(warmup_steps))
     model.fit(train_objectives=[(train_dataloader, train_loss)],
             epochs=num_epoch,

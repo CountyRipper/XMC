@@ -1,0 +1,11 @@
+
+prefix_sequence_length: 6
+prefix_mid_dim: 256
+prefix_dropout: 0.1
+bert_location: "facebook/bart-base"
+model_knowledge_usage: "concatenate"
+model_freeze_plm: 0
+model_freeze_prefix: 0
+model_map_description: 0
+model_use_description: 0
+special_tokens: null
