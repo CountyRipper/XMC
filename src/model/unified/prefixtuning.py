@@ -6,8 +6,8 @@ from torch import nn
 from transformers import AutoTokenizer
 from .base import PushToHubFriendlyModel
 from prompt.modeling_auto import AutoModelForSeq2SeqLM
-
-
+import torch
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 class PrefixModel(PushToHubFriendlyModel):
     def __init__(self, args):
         super().__init__()
@@ -24,7 +24,7 @@ class PrefixModel(PushToHubFriendlyModel):
         self.tokenizer = AutoTokenizer.from_pretrained(args.bert_location, use_fast=False)
         self.pretrain_model = AutoModelForSeq2SeqLM.from_pretrained(
             args.bert_location
-        )
+        ).to(device)
         self.config = self.pretrain_model.config
         from prompt.modeling_bart import BartForConditionalGeneration
         from prompt.modeling_t5 import T5ForConditionalGeneration
