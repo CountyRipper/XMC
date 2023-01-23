@@ -59,24 +59,24 @@ if __name__ == '__main__':
     parser.add_argument('--rank_is_trained',type=int,default=1)
     args = parser.parse_args()
     args.datadir = './dataset/Wiki10-31K/'
-    args.istrain=0
-    args.is_pred_trn=0
-    args.is_pred_tst=0
-    args.iscombine=0
-    args.is_rank_train=0
+    args.istrain=1
+    args.is_pred_trn=1
+    args.is_pred_tst=1
+    args.iscombine=1
+    args.is_rank_train=1
     args.is_ranking=1
     args.combine_model='bi-encoder'
-    args.combine_model_name='all-MiniLM-L6-v2'
-    args.modelname='BART'
+    args.combine_model_name='all-MiniLM-L12-v2'
+    args.modelname='bart'
     args.outputmodel='bart_save'
-    args.batch_size=2
+    args.batch_size=4
     args.t2t_epoch=3
     args.t2t_lr=5e-5
     args.checkdir='bart_check'
     args.data_size=4
-    args.rank_model='princeton-nlp/unsup-simcse-roberta-base'
-    args.rank_batch=16
-    args.rank_epoch=3
-    args.rankmodel_save='princeton-nlp/unsup-simcse-roberta-base'
+    args.rank_model='all-MiniLM-L12-v2'
+    args.rank_batch=64
+    args.rank_epoch= 3
+    args.rankmodel_save='t2t_bi_bi64'
     args.rank_is_trained = 0
     run(args)

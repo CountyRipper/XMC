@@ -10,6 +10,30 @@ from torch.utils.data import DataLoader
 import wandb
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 wandb.init(project="t2t_model")
+hparams_prefix_train = {
+    'max_epochs': 5,
+    'batch_size': 4,
+    'learning_rate': 5e-5,
+    'warmup': 100,
+    'max_iters': 3000,
+    'train_dir': "./dataset/Wiki10-31K/train_finetune.json",
+    'val_dir': "./dataset/Wiki10-31K/test_finetune.json",
+    'data_dir': "./dataset/Wiki10-31K/",
+    'model': 'BART'
+}
+class prefix_args(object):
+    def __init__(self) -> None:
+        self.prefix_sequence_length=100
+        self.prefix_mid_dim=512
+        self.prefix_dropout=0.1
+        self.bert_location="facebook/bart-base"
+        self.model_knowledge_usage="concatenate"
+        self.model_freeze_plm=0
+        self.model_freeze_prefix=0
+        self.model_map_description=0
+        self.model_use_description=0
+        self.special_tokens=None
+
 def get_predict_prefix(model,tokenizer,documents):
     model = model
     inputs = tokenizer(documents, return_tensors='pt', padding=True, truncation=True).to(device)
@@ -48,9 +72,11 @@ def predict_prefix(model,tokenizer,datadir,src_document,output_dir,data_size,mod
                 res.append(l_labels)
                 t.write(", ".join(l_labels))
                 t.write("\n")
-
-datadir = "./dataset/Wiki10-31K/"
-model = GenerationModel.load_from_checkpoint("./log/t2t_check/epoch=3-val_loss=0.46-other_metric=0.00.ckpt").to(device)
-#model.load_from_checkpoint("./log/prefix_check/"+"epoch=2-val_loss=0.50-other_metric=0.00.ckpt").to(device)
-tokenizer = BartTokenizerFast.from_pretrained('facebook/bart-base')
-predict_prefix(model=model,tokenizer=tokenizer,datadir=datadir,src_document="test_texts.txt",output_dir="test_pred_t2t.txt",data_size=8,model_cate='t2t')
+if __name__ =='__main__':
+    datadir = "./dataset/Wiki10-31K/"
+    model = Bart_Prefix_Model(hparams=hparams_prefix_train,prefix_hparameters=prefix_args())
+    model = Bart_Prefix_Model.load_from_checkpoint("log/pre_check/epoch=4-val_loss=0.47-other_metric=0.00.ckpt").to(device)
+    #model = model.load_from_checkpoint("log/pre_check/epoch=4-val_loss=0.47-other_metric=0.00.ckpt").to(device)
+    #model.load_from_checkpoint("./log/prefix_check/"+"epoch=2-val_loss=0.50-other_metric=0.00.ckpt").to(device)
+    tokenizer = BartTokenizerFast.from_pretrained('facebook/bart-base')
+    predict_prefix(model=model,tokenizer=tokenizer,datadir=datadir,src_document="train_texts.txt",output_dir="train_pred_pre.txt",data_size=8,model_cate='pre')

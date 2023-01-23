@@ -12,8 +12,10 @@ from torch.utils.data import DataLoader
 import numpy as np
 import yaml
 from datasets import load_dataset
+import wandb
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+wandb.init(project="prefix_model")
 class CosineWarmupScheduler(torch.optim.lr_scheduler._LRScheduler):
     def __init__(self, optimizer, warmup, max_iters):
         self.warmup = warmup
@@ -60,12 +62,15 @@ class prefix_args(object):
         self.special_tokens=None
     
 class Bart_Prefix_Model(pl.LightningModule):
-    def __init__(self, hparams=None):
+    def __init__(self, hparams=None,prefix_hparameters=None):
         super().__init__()
-        self.prefix_hparameters = prefix_args()
+        self.prefix_hparameters = prefix_hparameters
+        if prefix_hparameters==None:
+           self.prefix_hparameters = prefix_args()
         self.hparameters = hparams
         self.model = PrefixModel(self.prefix_hparameters).to(device)
         self.tokenizer = BartTokenizerFast.from_pretrained("facebook/bart-base")
+        self.curr_avg_loss = 0.0
         self.save_hyperparameters()
     def get_tokenizer(model_name):
         if 'bart' in model_name:
@@ -81,10 +86,18 @@ class Bart_Prefix_Model(pl.LightningModule):
         res = self(encoder_input_ids,encoder_attention_mask,labels)
         #loss = self.custom_loss(logits, labels) custom loss
         cur_lr = self.trainer.optimizers[0].param_groups[0]['lr']
+        global_step = self.trainer.global_step
+        self.curr_avg_loss+=res['loss']
         # #手动优化scheduler
         sch = self.lr_schedulers()
+        if (global_step+1)%50 == 0:
+            wandb.log({"loss": self.curr_avg_loss/50,"global_step":global_step})
+            wandb.log({"learning_rate":cur_lr,"global_step":global_step})
+            wandb.log({"train_epoch":self.trainer.current_epoch,"global_step":global_step})
+            self.curr_avg_loss= 0.0
         if (batch_idx + 1) % 10 == 0:
             sch.step()
+        
         self.log('lr',cur_lr, prog_bar=True, on_step=True)
         self.log('train_loss', res['loss'], prog_bar=True,batch_size=self.hparameters['batch_size'])
         return res['loss']   
@@ -92,7 +105,6 @@ class Bart_Prefix_Model(pl.LightningModule):
         encoder_input_ids, encoder_attention_mask,labels = torch.stack([i['input_ids'] for i in batch ]),torch.stack([i['attention_mask'] for i in batch ]),torch.stack([i['labels'] for i in batch ])
         #encoder_input_ids, encoder_attention_mask,labels = batch['input_ids'],batch['attention_mask'],batch['labels']
         res = self(encoder_input_ids,encoder_attention_mask,labels)
-        # cur_lr = self.trainer.optimizers[0].param_groups[0]['lr']
         # self.log('lr',cur_lr, prog_bar=True, on_step=True)
         #loss, logits = self(encoder_input_ids,labels)    
         self.log('val_loss', res['loss'], prog_bar=True,batch_size=self.hparameters['batch_size'])
@@ -108,22 +120,12 @@ class Bart_Prefix_Model(pl.LightningModule):
         # return optimizer
         return{
             "optimizer": optimizer,
-            "lr_scheduler": torch.optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=100),
-            # "lr_scheduler":torch.optim.lr_scheduler.StepLR(optimizer=optimizer,step_size=1,gamma=0.99),
+            #"lr_scheduler": torch.optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=100),
+            "lr_scheduler":torch.optim.lr_scheduler.StepLR(optimizer=optimizer,step_size=1,gamma=0.999),
             "interval": "step",
             "frequency": 1,
         }
-        # scheduler = {
-        #     "scheduler": torch.optim.lr_scheduler.StepLR(
-        #         optimizer,
-        #         step_size=50,
-        #         gamma=0.1
-        #     ),
-        #     "interval": "step",
-        #     "frequency": 20,
-        # }
-        # #scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer,step_size=50,gamma=0.1)
-        # return [optimizer],[scheduler]
+
       
     def train_dataloader(self):
         datadir = self.hparameters['train_dir']

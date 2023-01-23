@@ -8,7 +8,7 @@ from combine import combine_clean, get_combine_bi_list, get_combine_list, get_co
 from utils.premethod import clean_set, save_time, p_at_k
 from rank import rank_bi,rank,rank_simcse
 from rank_training import rank_train
-from model.rank_model import Rank_model
+#from model.rank_model import Rank_model
 from trainer_kp import modeltrainer
 #from utils.p_at_1 import p_at_k
 
@@ -26,7 +26,7 @@ def run(args:ArgumentParser):
     model_time6=None
     model_time7=None
     try:
-        affix1 = 'pega'
+        affix1 = None
         if re.match("\w*bart\w*",args.modelname,re.I):
             affix1 = 'ba'
             if re.match("\w*bart-large\w*",args.modelname,re.I):
@@ -39,7 +39,8 @@ def run(args:ArgumentParser):
                 affix1='t5l'
         elif re.match("\w*kaybart\w*",args.modelname,re.I):
             affix1 = 'kb'
-        args.affix1=affix1
+        else:
+            affix1=args.modelname
         print(args)
         start = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         time_stap0 = time.process_time()
